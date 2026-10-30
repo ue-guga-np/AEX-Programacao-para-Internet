@@ -1,0 +1,7 @@
+{% extends "estoque/base.html" %}
+{% block title %}Dar baixa | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-cabecalho"><div><p class="sobretitulo">MOVIMENTAÇÃO DE ESTOQUE</p><h1>Dar baixa no material</h1><p>Registre a quantidade retirada para um serviço.</p></div></div>
+<section class="painel formulario"><div class="saldo-atual"><span>Material</span><strong>{{ produto.nome }}</strong><span>Saldo disponível</span><strong>{{ produto.quantidade|floatformat:"-2" }} {{ produto.unidade.sigla }}</strong></div>
+<form method="post">{% csrf_token %}{% for field in form %}<div class="campo"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<small class="erro">{{ error }}</small>{% endfor %}</div>{% endfor %}<div class="acoes-form"><button class="botao" type="submit">Registrar retirada</button><a class="botao secundario" href="{% url 'estoque:lista' %}">Cancelar</a></div></form></section>
+{% endblock %}

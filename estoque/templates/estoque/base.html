@@ -1,0 +1,27 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Gerenciador de Estoque{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'estoque/css/estilo.css' %}">
+</head>
+<body>
+<header class="topo">
+  <a class="marca" href="{% url 'estoque:inicio' %}"><span class="marca-icone">GE</span><span>Gerenciador de Estoque<small>Marcenaria</small></span></a>
+  <nav>
+    <a href="{% url 'estoque:inicio' %}">Início</a>
+    <a href="{% url 'estoque:lista' %}">Materiais</a>
+    <a href="{% url 'estoque:movimentacoes' %}">Movimentações</a>
+  </nav>
+</header>
+<main class="container">
+  {% if messages %}
+    {% for message in messages %}<div class="mensagem {{ message.tags }}">{{ message }}</div>{% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+<footer>Controle de estoque da marcenaria</footer>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{% extends "estoque/base.html" %}
+{% block title %}{{ titulo }} | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-cabecalho"><div><p class="sobretitulo">CATÁLOGO DE MATERIAIS</p><h1>{{ titulo }}</h1><p>Preencha os dados para manter o estoque atualizado.</p></div><a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar</a></div>
+<form method="post" class="painel formulario">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="erro">{{ form.non_field_errors }}</div>{% endif %}
+  {% for field in form %}
+  <div class="campo {% if field.name == 'alerta_manual' %}campo-checkbox{% endif %}">
+    {% if field.name == 'alerta_manual' %}{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<small class="erro">{{ error }}</small>{% endfor %}
+  </div>
+  {% endfor %}
+  <div class="acoes-form"><button class="botao" type="submit">Salvar material</button><a class="botao secundario" href="{% url 'estoque:lista' %}">Cancelar</a></div>
+</form>
+{% endblock %}

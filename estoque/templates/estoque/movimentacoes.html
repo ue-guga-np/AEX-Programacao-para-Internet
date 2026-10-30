@@ -1,0 +1,8 @@
+{% extends "estoque/base.html" %}
+{% block title %}Movimentações | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-cabecalho"><div><p class="sobretitulo">HISTÓRICO</p><h1>Movimentações de estoque</h1><p>Registro das entradas e retiradas realizadas no sistema.</p></div></div>
+<div class="painel tabela-wrap"><table><thead><tr><th>Data e hora</th><th>Material</th><th>Tipo</th><th>Quantidade</th><th>Saldo após operação</th></tr></thead><tbody>
+{% for item in registros %}<tr><td>{{ item.data|date:"d/m/Y H:i" }}</td><td>{{ item.produto.nome }}</td><td>{% if item.tipo == "S" %}<span class="status critico">Saída</span>{% else %}<span class="status normal">Entrada</span>{% endif %}</td><td>{{ item.quantidade|floatformat:"-2" }}</td><td>{{ item.saldo_resultante|floatformat:"-2" }} {{ item.produto.unidade.sigla }}</td></tr>{% empty %}<tr><td colspan="5" class="vazio">Ainda não há movimentações. Use “Dar baixa” na lista de materiais.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

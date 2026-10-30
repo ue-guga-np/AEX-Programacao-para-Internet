@@ -1,0 +1,12 @@
+{% extends "estoque/base.html" %}
+{% block title %}Materiais | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-cabecalho"><div><p class="sobretitulo">CATÁLOGO</p><h1>Materiais</h1><p>Consulte e gerencie os itens da marcenaria.</p></div><a class="botao" href="{% url 'estoque:criar' %}">＋ Novo material</a></div>
+<form class="busca" method="get"><input type="search" name="q" value="{{ termo }}" placeholder="Buscar por nome ou categoria..."><button class="botao secundario" type="submit">Buscar</button>{% if termo %}<a class="limpar" href="{% url 'estoque:lista' %}">Limpar</a>{% endif %}</form>
+<div class="painel tabela-wrap"><table><thead><tr><th>Material</th><th>Categoria</th><th>Unidade</th><th>Qtd. atual</th><th>Qtd. mínima</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+{% for produto in produtos %}
+<tr class="{% if produto.estoque_critico %}linha-alerta{% endif %}"><td><strong>{{ produto.nome }}</strong></td><td>{{ produto.categoria.nome }}</td><td>{{ produto.unidade.sigla }}</td><td>{{ produto.quantidade|floatformat:"-2" }}</td><td>{{ produto.quantidade_minima|floatformat:"-2" }}</td><td>{% if produto.estoque_critico %}<span class="status critico">Estoque crítico</span>{% else %}<span class="status normal">Normal</span>{% endif %}</td><td><div class="acoes"><a href="{% url 'estoque:editar' produto.pk %}">Editar</a><a href="{% url 'estoque:baixa' produto.pk %}">Dar baixa</a><a class="perigo-texto" href="{% url 'estoque:excluir' produto.pk %}">Excluir</a></div></td></tr>
+{% empty %}<tr><td colspan="7" class="vazio">Nenhum material encontrado. Cadastre o primeiro material.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="nota">Os itens em vermelho estão abaixo ou no limite da quantidade mínima, ou foram marcados como urgentes.</p>
+{% endblock %}

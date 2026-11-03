@@ -57,16 +57,29 @@ def baixa_estoque(request, pk):
     if request.method == "POST" and form.is_valid():
         quantidade = form.cleaned_data["quantidade"]
         if quantidade > produto.quantidade:
-            form.add_error("quantidade", "A retirada não pode ser maior que o saldo disponível.")
+            form.add_error(
+                "quantidade",
+                f"A retirada não pode ser maior que o saldo disponível ({produto.quantidade} {produto.unidade.sigla}).",
+            )
         else:
             with transaction.atomic():
                 produto.quantidade -= quantidade
                 produto.save(update_fields=["quantidade"])
                 MovimentacaoEstoque.objects.create(
-                    produto=produto, tipo=MovimentacaoEstoque.SAIDA,
-                    quantidade=quantidade, saldo_resultante=produto.quantidade
+                    produto=produto,
+                    tipo=MovimentacaoEstoque.SAIDA,
+                    quantidade=quantidade,
+                    saldo_resultante=produto.quantidade,
                 )
-            messages.success(request, "Baixa de estoque registrada.")
+            messages.success(
+                request,
+                f'Baixa de {quantidade} {produto.unidade.sigla} em "{produto.nome}" registrada. Saldo atual: {produto.quantidade} {produto.unidade.sigla}.',
+            )
+            if produto.estoque_critico:
+                messages.warning(
+                    request,
+                    f'Atenção: o material "{produto.nome}" entrou em nível de estoque crítico!',
+                )
             return redirect("estoque:lista")
     return render(request, "estoque/baixa.html", {"produto": produto, "form": form})
 

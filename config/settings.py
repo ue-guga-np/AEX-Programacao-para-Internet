@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Configuração principal do projeto Django.
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "chave-local-apenas-para-desenvolvimento"
 DEBUG = True

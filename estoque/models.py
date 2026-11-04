@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 
+# Modelo para classificar os materiais cadastrados no estoque.
 class Categoria(models.Model):
     nome = models.CharField(max_length=80, unique=True)
 
@@ -11,6 +12,7 @@ class Categoria(models.Model):
     def __str__(self):
         return self.nome
 
+# Modelo para definir a unidade usada para medir cada material.
 class UnidadeMedida(models.Model):
     nome = models.CharField(max_length=40, unique=True)
     sigla = models.CharField(max_length=10)
@@ -23,6 +25,7 @@ class UnidadeMedida(models.Model):
     def __str__(self):
         return f"{self.nome} ({self.sigla})"
 
+# Modelo principal do estoque: representa cada material disponível.
 class Produto(models.Model):
     nome = models.CharField(max_length=120)
     categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT, related_name="produtos")
@@ -42,6 +45,7 @@ class Produto(models.Model):
     def estoque_critico(self):
         return self.quantidade <= self.quantidade_minima or self.alerta_manual
 
+# Histórico de entradas e saídas para acompanhar o saldo do estoque.
 class MovimentacaoEstoque(models.Model):
     ENTRADA = "E"
     SAIDA = "S"

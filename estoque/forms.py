@@ -1,6 +1,7 @@
 from django import forms
 from .models import Produto
 
+# Formulário para cadastrar ou editar um material do estoque.
 class ProdutoForm(forms.ModelForm):
     class Meta:
         model = Produto
@@ -25,6 +26,7 @@ class ProdutoForm(forms.ModelForm):
             raise forms.ValidationError("Informe o nome do material.")
         return nome
 
+# Formulário usado para registrar a saída de um material do estoque.
 class BaixaEstoqueForm(forms.Form):
     quantidade = forms.DecimalField(
         label="Quantidade a retirar",

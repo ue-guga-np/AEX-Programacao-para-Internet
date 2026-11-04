@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .forms import ProdutoForm, BaixaEstoqueForm
 from .models import Produto, MovimentacaoEstoque
 
+# Página inicial com resumo geral do sistema e visão rápida do estoque.
 def inicio(request):
     produtos = Produto.objects.all()
     context = {
@@ -14,6 +15,7 @@ def inicio(request):
     }
     return render(request, "estoque/inicio.html", context)
 
+# Lista e busca dos produtos cadastrados, com ordenação por alerta de estoque.
 def lista_produtos(request):
     termo = request.GET.get("q", "").strip()
     produtos = Produto.objects.select_related("categoria", "unidade").all()
@@ -22,6 +24,7 @@ def lista_produtos(request):
     produtos = sorted(produtos, key=lambda p: (not p.estoque_critico, p.categoria.nome.lower(), p.nome.lower()))
     return render(request, "estoque/lista.html", {"produtos": produtos, "termo": termo})
 
+# Cadastro de um novo material no sistema.
 def criar_produto(request):
     form = ProdutoForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -30,6 +33,7 @@ def criar_produto(request):
         return redirect("estoque:lista")
     return render(request, "estoque/formulario.html", {"form": form, "titulo": "Cadastrar material"})
 
+# Edição dos dados de um material já cadastrado.
 def editar_produto(request, pk):
     produto = get_object_or_404(Produto, pk=pk)
     form = ProdutoForm(request.POST or None, instance=produto)
@@ -39,6 +43,7 @@ def editar_produto(request, pk):
         return redirect("estoque:lista")
     return render(request, "estoque/formulario.html", {"form": form, "titulo": "Editar material", "produto": produto})
 
+# Exclusão de um material, com proteção quando ele já teve movimentação.
 def excluir_produto(request, pk):
     produto = get_object_or_404(Produto, pk=pk)
     if request.method == "POST":
@@ -51,30 +56,23 @@ def excluir_produto(request, pk):
         return redirect("estoque:lista")
     return render(request, "estoque/confirmar_exclusao.html", {"produto": produto})
 
+# Registrar a retirada de material e atualizar o saldo do estoque.
 def baixa_estoque(request, pk):
     produto = get_object_or_404(Produto, pk=pk)
     form = BaixaEstoqueForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         quantidade = form.cleaned_data["quantidade"]
         if quantidade > produto.quantidade:
-            form.add_error(
-                "quantidade",
-                f"A retirada não pode ser maior que o saldo disponível ({produto.quantidade} {produto.unidade.sigla}).",
-            )
+            form.add_error("quantidade", "A retirada não pode ser maior que o saldo disponível.")
         else:
             with transaction.atomic():
                 produto.quantidade -= quantidade
                 produto.save(update_fields=["quantidade"])
                 MovimentacaoEstoque.objects.create(
-                    produto=produto,
-                    tipo=MovimentacaoEstoque.SAIDA,
-                    quantidade=quantidade,
-                    saldo_resultante=produto.quantidade,
+                    produto=produto, tipo=MovimentacaoEstoque.SAIDA,
+                    quantidade=quantidade, saldo_resultante=produto.quantidade
                 )
-            messages.success(
-                request,
-                f'Baixa de {quantidade} {produto.unidade.sigla} em "{produto.nome}" registrada. Saldo atual: {produto.quantidade} {produto.unidade.sigla}.',
-            )
+            messages.success(request, f"Baixa de estoque registrada para {produto.nome}.")
             if produto.estoque_critico:
                 messages.warning(
                     request,
@@ -83,6 +81,7 @@ def baixa_estoque(request, pk):
             return redirect("estoque:lista")
     return render(request, "estoque/baixa.html", {"produto": produto, "form": form})
 
+# Exibe o histórico completo de entradas e saídas de material.
 def movimentacoes(request):
     registros = MovimentacaoEstoque.objects.select_related("produto").all()
     return render(request, "estoque/movimentacoes.html", {"registros": registros})

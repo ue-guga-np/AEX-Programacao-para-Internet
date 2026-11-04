@@ -216,6 +216,13 @@
             <button type="button" class="chip-btn" onclick="definirQtdBaixa(10)">10</button>
             <button type="button" class="chip-btn" onclick="definirQtdBaixaTotal()">Tudo</button>
           </div>
+          <div style="margin-top: 10px;">
+                <input type="text"
+                      name="observacao"
+                      id="input-obs-baixa"
+                      placeholder="Motivo / O.S. (opcional, ex: Armário cliente Carlos)"
+                      style="width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 12px; border: 1px solid var(--borda, #ccc); border-radius: 6px;">
+          </div>
         </form>
       </div>
 
@@ -353,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const urlEntrada = tr.getAttribute('data-url-entrada') || '';
     const urlEditar = tr.getAttribute('data-url-editar') || '';
     const urlExcluir = tr.getAttribute('data-url-excluir') || '';
-
+    const inputObsBaixa = document.getElementById('input-obs-baixa');
     produtoAtualSaldoInt = quantidadeRaw;
 
     // Atualiza Textos
@@ -362,7 +369,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (unidadeElement) unidadeElement.textContent = '📏 ' + unidade;
     if (saldoElement) saldoElement.textContent = quantidadeRaw + ' ' + unidade;
     if (minimoElement) minimoElement.textContent = minima + ' ' + unidade;
-
+    if (inputObsBaixa) { inputObsBaixa.value = '';}
+    
     // Badge e Destaque
     if (badgeElement) {
       if (critico) {

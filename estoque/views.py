@@ -194,6 +194,8 @@ def baixa_rapida(request, pk):
 
         qtd_decimal = Decimal(quantidade_int)
         user_reg = request.user if request.user.is_authenticated else None
+        observacao = request.POST.get("observacao", "").strip()
+        
         with transaction.atomic():
             produto.quantidade -= qtd_decimal
             produto.save(update_fields=["quantidade"])
@@ -203,6 +205,7 @@ def baixa_rapida(request, pk):
                 tipo=MovimentacaoEstoque.SAIDA,
                 quantidade=qtd_decimal,
                 saldo_resultante=produto.quantidade,
+                observacao=observacao,
             )
 
         saldo_formatado = int(produto.quantidade) if produto.quantidade % 1 == 0 else produto.quantidade

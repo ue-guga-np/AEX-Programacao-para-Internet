@@ -66,6 +66,7 @@
         <th>Operação</th>
         <th>Qtd. movimentada</th>
         <th>Saldo resultante</th>
+        <th>Motivo / O.S.</th>
       </tr>
     </thead>
     <tbody>
@@ -107,10 +108,19 @@
         <td>
           <strong>{% localize off %}{{ item.saldo_resultante|floatformat:"0" }}{% endlocalize %} {{ item.produto.unidade.sigla }}</strong>
         </td>
+        <td style="font-size: 11px; color: var(--texto);">
+       {% if item.observacao %}
+         {{ item.observacao }}
+       {% else %}
+         <span style="color: var(--muted);">-</span>
+       {% endif %}
+     </td>
+   </tr>
+
       </tr>
       {% empty %}
       <tr>
-        <td colspan="8" class="vazio">
+        <td colspan="9" class="vazio">
           Nenhuma movimentação registrada até o momento. Realize uma baixa ou adicione saldo na lista de materiais.
         </td>
       </tr>

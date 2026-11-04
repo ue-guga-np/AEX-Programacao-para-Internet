@@ -80,8 +80,8 @@ class MovimentacaoEstoque(models.Model):
     tipo = models.CharField(max_length=1, choices=TIPOS)
     quantidade = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.01)])
     saldo_resultante = models.DecimalField(max_digits=10, decimal_places=2)
+    observacao = models.CharField(max_length=255, blank=True, default="", verbose_name="Observação / O.S")
     data = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         ordering = ["-data"]
 

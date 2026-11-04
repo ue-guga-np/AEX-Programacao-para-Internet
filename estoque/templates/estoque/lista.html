@@ -1,12 +1,476 @@
 {% extends "estoque/base.html" %}
+{% load l10n %}
 {% block title %}Materiais | Gerenciador de Estoque{% endblock %}
 {% block content %}
-<div class="pagina-cabecalho"><div><p class="sobretitulo">CATÁLOGO</p><h1>Materiais</h1><p>Consulte e gerencie os itens da marcenaria.</p></div><a class="botao" href="{% url 'estoque:criar' %}">＋ Novo material</a></div>
-<form class="busca" method="get"><input type="search" name="q" value="{{ termo }}" placeholder="Buscar por nome ou categoria..."><button class="botao secundario" type="submit">Buscar</button>{% if termo %}<a class="limpar" href="{% url 'estoque:lista' %}">Limpar</a>{% endif %}</form>
-<div class="painel tabela-wrap"><table><thead><tr><th>Material</th><th>Categoria</th><th>Unidade</th><th>Qtd. atual</th><th>Qtd. mínima</th><th>Status</th><th>Ações</th></tr></thead><tbody>
-{% for produto in produtos %}
-<tr class="{% if produto.estoque_critico %}linha-alerta{% endif %}"><td><strong>{{ produto.nome }}</strong></td><td>{{ produto.categoria.nome }}</td><td>{{ produto.unidade.sigla }}</td><td>{{ produto.quantidade|floatformat:"-2" }}</td><td>{{ produto.quantidade_minima|floatformat:"-2" }}</td><td>{% if produto.estoque_critico %}<span class="status critico">Estoque crítico</span>{% else %}<span class="status normal">Normal</span>{% endif %}</td><td><div class="acoes"><a href="{% url 'estoque:editar' produto.pk %}">Editar</a><a href="{% url 'estoque:baixa' produto.pk %}">Dar baixa</a><a class="perigo-texto" href="{% url 'estoque:excluir' produto.pk %}">Excluir</a></div></td></tr>
-{% empty %}<tr><td colspan="7" class="vazio">Nenhum material encontrado. Cadastre o primeiro material.</td></tr>{% endfor %}
-</tbody></table></div>
-<p class="nota">Os itens em vermelho estão abaixo ou no limite da quantidade mínima, ou foram marcados como urgentes.</p>
+<div class="pagina-cabecalho">
+  <div>
+    <p class="sobretitulo">CATÁLOGO</p>
+    <h1>Materiais da Marcenaria</h1>
+    <p>Consulte insumos, visualize fotos ao clicar na tabela e realize baixas e entradas rápidas.</p>
+  </div>
+  <div class="cabecalho-botoes">
+    <a class="botao secundario" href="{% url 'estoque:exportar_excel' %}" title="Exportar dados para Excel">📊 Exportar Excel</a>
+    {% if user.is_staff or user.is_superuser %}
+      <a class="botao secundario" href="{% url 'estoque:painel_backups' %}" title="Gerenciar backups do sistema">💾 Backups</a>
+      <a class="botao" href="{% url 'estoque:criar' %}">＋ Novo material</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="filtros-barra">
+  <form class="busca" method="get" id="form-busca">
+    <input type="search" name="q" value="{{ termo }}" placeholder="Buscar por nome ou categoria...">
+    {% if categoria_ativa %}
+      <input type="hidden" name="categoria" value="{{ categoria_ativa }}">
+    {% endif %}
+    <button class="botao secundario" type="submit">Buscar</button>
+  </form>
+
+  <form method="get" class="filtro-categoria" id="form-filtro-cat">
+    {% if termo %}
+      <input type="hidden" name="q" value="{{ termo }}">
+    {% endif %}
+    <select name="categoria" onchange="this.form.submit()">
+      <option value="">Todas as categorias</option>
+      {% for cat in categorias %}
+        <option value="{{ cat.pk }}" {% if categoria_ativa == cat.pk|stringformat:"s" %}selected{% endif %}>
+          {{ cat.nome }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  {% if termo or categoria_ativa %}
+    <a class="limpar" href="{% url 'estoque:lista' %}">Limpar filtros</a>
+  {% endif %}
+</div>
+
+<div class="layout-materiais">
+  <!-- Tabela de Produtos (Esquerda) -->
+  <div>
+    <div class="painel tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-miniatura">Foto</th>
+            <th>Material</th>
+            <th>Categoria</th>
+            <th>Unidade</th>
+            <th>Qtd. atual</th>
+            <th>Qtd. mín.</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-produtos-corpo">
+          {% for produto in produtos %}
+          <tr class="linha-produto {% if produto.estoque_critico %}linha-alerta{% endif %} {% if produto_selecionado and produto.pk == produto_selecionado.pk %}linha-ativa{% endif %}"
+              data-id="{{ produto.pk }}"
+              data-nome="{{ produto.nome }}"
+              data-categoria="{{ produto.categoria.nome }}"
+              data-unidade="{{ produto.unidade.sigla }}"
+              data-quantidade="{% localize off %}{{ produto.quantidade|floatformat:'0' }}{% endlocalize %}"
+              data-quantidade-raw="{% localize off %}{{ produto.quantidade|floatformat:'0' }}{% endlocalize %}"
+              data-minima="{% localize off %}{{ produto.quantidade_minima|floatformat:'0' }}{% endlocalize %}"
+              data-critico="{% if produto.estoque_critico %}1{% else %}0{% endif %}"
+              data-imagem="{% if produto.imagem %}{{ produto.imagem.url }}{% endif %}"
+              data-url-baixa="{% url 'estoque:baixa_rapida' produto.pk %}"
+              data-url-entrada="{% url 'estoque:adicionar_saldo' produto.pk %}"
+              data-url-editar="{% url 'estoque:editar' produto.pk %}"
+              data-url-excluir="{% url 'estoque:excluir' produto.pk %}">
+            
+            <td class="col-miniatura">
+              {% if produto.imagem %}
+                <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="thumb-mini">
+              {% else %}
+                <span class="thumb-mini-vazio" title="Sem foto">S/F</span>
+              {% endif %}
+            </td>
+            <td><strong>{{ produto.nome }}</strong></td>
+            <td>{{ produto.categoria.nome }}</td>
+            <td>{{ produto.unidade.sigla }}</td>
+            <td><strong>{% localize off %}{{ produto.quantidade|floatformat:"0" }}{% endlocalize %}</strong></td>
+            <td>{% localize off %}{{ produto.quantidade_minima|floatformat:"0" }}{% endlocalize %}</td>
+            <td>
+              {% if produto.estoque_critico %}
+                <span class="status critico">Estoque crítico</span>
+              {% else %}
+                <span class="status normal">Normal</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if user.is_staff or user.is_superuser %}
+                <div class="acoes">
+                  <a href="{% url 'estoque:editar' produto.pk %}" title="Editar cadastro">Editar</a>
+                  <a class="perigo-texto" href="{% url 'estoque:excluir' produto.pk %}" title="Excluir produto">Excluir</a>
+                </div>
+              {% else %}
+                <span style="color:var(--muted); font-size:11px;">Operação rápida</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="vazio">
+              Nenhum material cadastrado. Clique no botão acima para adicionar o primeiro.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="nota">Clique em qualquer item da tabela para inspecionar a foto e realizar retiradas ou adições de saldo.</p>
+  </div>
+
+  <!-- Painel Lateral: Inspeção do Produto e Ações Rápidas (Direita) -->
+  <aside>
+    <div class="painel-inspecao" id="painel-inspecao">
+      <div class="painel-inspecao-cabecalho">
+        <h3>🔍 Material Selecionado</h3>
+        <span id="badge-status-inspecao" class="status {% if produto_selecionado and produto_selecionado.estoque_critico %}critico{% else %}normal{% endif %}">
+          {% if produto_selecionado %}
+            {% if produto_selecionado.estoque_critico %}Estoque crítico{% else %}Normal{% endif %}
+          {% else %}
+            —
+          {% endif %}
+        </span>
+      </div>
+
+      <!-- Exibição da Foto (US08: foto na proporção correta ou 'Sem Imagem') -->
+      <div class="foto-inspecao-wrap" id="foto-inspecao-wrap">
+        {% if produto_selecionado and produto_selecionado.imagem %}
+          <img src="{{ produto_selecionado.imagem.url }}" alt="{{ produto_selecionado.nome }}" class="foto-inspecao-img" id="img-inspecao">
+          <div class="foto-inspecao-sem-imagem" id="sem-imagem-inspecao" style="display:none;">
+            <span class="icone-camera">📷</span>
+            <span class="texto-sem-foto">Sem Imagem</span>
+          </div>
+        {% else %}
+          <img src="" alt="" class="foto-inspecao-img" id="img-inspecao" style="display:none;">
+          <div class="foto-inspecao-sem-imagem" id="sem-imagem-inspecao">
+            <span class="icone-camera">📷</span>
+            <span class="texto-sem-foto">Sem Imagem</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Detalhes do Produto -->
+      <div class="inspecao-detalhes">
+        <h4 id="nome-inspecao">
+          {% if produto_selecionado %}{{ produto_selecionado.nome }}{% else %}Nenhum material selecionado{% endif %}
+        </h4>
+        <div class="inspecao-tags">
+          <span class="inspecao-tag" id="categoria-inspecao">
+            📁 {% if produto_selecionado %}{{ produto_selecionado.categoria.nome }}{% else %}—{% endif %}
+          </span>
+          <span class="inspecao-tag" id="unidade-inspecao">
+            📏 {% if produto_selecionado %}{{ produto_selecionado.unidade.sigla }}{% else %}—{% endif %}
+          </span>
+        </div>
+
+        <div class="inspecao-metricas">
+          <div class="inspecao-metrica {% if produto_selecionado and produto_selecionado.estoque_critico %}critica{% endif %}" id="card-saldo-inspecao">
+            <span>Saldo Atual</span>
+            <strong id="saldo-inspecao">
+              {% if produto_selecionado %}{% localize off %}{{ produto_selecionado.quantidade|floatformat:"0" }}{% endlocalize %} {{ produto_selecionado.unidade.sigla }}{% else %}0{% endif %}
+            </strong>
+          </div>
+          <div class="inspecao-metrica">
+            <span>Qtd. Mínima</span>
+            <strong id="minimo-inspecao">
+              {% if produto_selecionado %}{% localize off %}{{ produto_selecionado.quantidade_minima|floatformat:"0" }}{% endlocalize %} {{ produto_selecionado.unidade.sigla }}{% else %}0{% endif %}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Abas de Ação: Baixa Rápida / Adicionar Saldo -->
+      {% if produto_selecionado %}
+      <div class="abas-acoes">
+        <button type="button" class="aba-btn ativa" id="tab-btn-baixa" onclick="alternarAba('baixa')">⚡ Dar Baixa</button>
+        <button type="button" class="aba-btn" id="tab-btn-entrada" onclick="alternarAba('entrada')">➕ Adicionar Saldo</button>
+      </div>
+
+      <!-- Formulário de Baixa Rápida -->
+      <div class="card-operacao-rapida" id="card-baixa-bloco">
+        <h5>⚡ Retirada de Estoque (Baixa)</h5>
+        <p>Informe a quantidade inteira a retirar para deduzir do saldo.</p>
+
+        <form method="post" id="form-baixa-rapida" action="{% url 'estoque:baixa_rapida' produto_selecionado.pk %}" class="baixa-rapida-form">
+          {% csrf_token %}
+          <div class="baixa-linha-input">
+            <input type="number"
+                   step="1"
+                   min="1"
+                   max="{% localize off %}{{ produto_selecionado.quantidade|floatformat:'0' }}{% endlocalize %}"
+                   name="quantidade"
+                   id="input-qtd-baixa"
+                   placeholder="Valor inteiro"
+                   required>
+            <button class="botao perigo" type="submit" id="btn-submit-baixa">Baixar</button>
+          </div>
+
+          <div class="baixa-chips">
+            <span>Atalhos:</span>
+            <button type="button" class="chip-btn" onclick="definirQtdBaixa(1)">1</button>
+            <button type="button" class="chip-btn" onclick="definirQtdBaixa(5)">5</button>
+            <button type="button" class="chip-btn" onclick="definirQtdBaixa(10)">10</button>
+            <button type="button" class="chip-btn" onclick="definirQtdBaixaTotal()">Tudo</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Formulário de Entrada / Aumentar Saldo -->
+      <div class="card-operacao-rapida" id="card-entrada-bloco" style="display:none;">
+        <h5 style="color:var(--verde);">➕ Entrada de Estoque (Adicionar)</h5>
+        <p>Informe a quantidade inteira para somar ao saldo do material.</p>
+
+        <form method="post" id="form-adicionar-saldo" action="{% url 'estoque:adicionar_saldo' produto_selecionado.pk %}" class="baixa-rapida-form">
+          {% csrf_token %}
+          <div class="baixa-linha-input">
+            <input type="number"
+                   step="1"
+                   min="1"
+                   name="quantidade"
+                   id="input-qtd-entrada"
+                   placeholder="Valor inteiro"
+                   required>
+            <button class="botao" type="submit" id="btn-submit-entrada">Adicionar</button>
+          </div>
+
+          <div class="baixa-chips">
+            <span>Atalhos:</span>
+            <button type="button" class="chip-btn" onclick="definirQtdEntrada(1)">+1</button>
+            <button type="button" class="chip-btn" onclick="definirQtdEntrada(5)">+5</button>
+            <button type="button" class="chip-btn" onclick="definirQtdEntrada(10)">+10</button>
+            <button type="button" class="chip-btn" onclick="definirQtdEntrada(50)">+50</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Links de Atalho -->
+      {% if user.is_staff or user.is_superuser %}
+        <div class="inspecao-links">
+          <a id="link-editar-inspecao" href="{% url 'estoque:editar' produto_selecionado.pk %}">✏️ Editar</a>
+          <a id="link-excluir-inspecao" class="link-perigo" href="{% url 'estoque:excluir' produto_selecionado.pk %}">🗑️ Excluir</a>
+        </div>
+      {% else %}
+        <div style="font-size:11px; color:#0369a1; background:#e0f2fe; padding:8px 10px; border-radius:4px; margin-top:12px; border:1px solid #bae6fd; text-align:center;">
+          🔨 <strong>Perfil de Operador</strong>: você pode dar baixas e adicionar saldo nos botões acima. Alterações estruturais são gerenciadas pelo Administrador.
+        </div>
+      {% endif %}
+      {% else %}
+      <div class="card-operacao-rapida">
+        <p style="margin: 0; color: var(--muted); text-align: center;">Cadastre um material para habilitar as funções de estoque.</p>
+      </div>
+      {% endif %}
+
+      <div class="instrucao-selecao">
+        <span>💡</span>
+        <span>Clique em qualquer linha da tabela para trocar de material.</span>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// Variáveis de estado global do painel
+let produtoAtualSaldoInt = 0;
+
+function alternarAba(tipo) {
+  const btnBaixa = document.getElementById('tab-btn-baixa');
+  const btnEntrada = document.getElementById('tab-btn-entrada');
+  const cardBaixa = document.getElementById('card-baixa-bloco');
+  const cardEntrada = document.getElementById('card-entrada-bloco');
+
+  if (tipo === 'baixa') {
+    btnBaixa.classList.add('ativa');
+    btnEntrada.classList.remove('ativa');
+    cardBaixa.style.display = 'block';
+    cardEntrada.style.display = 'none';
+  } else {
+    btnEntrada.classList.add('ativa');
+    btnBaixa.classList.remove('ativa');
+    cardEntrada.style.display = 'block';
+    cardBaixa.style.display = 'none';
+  }
+}
+
+function definirQtdBaixa(valor) {
+  const input = document.getElementById('input-qtd-baixa');
+  if (input) {
+    input.value = Math.min(valor, produtoAtualSaldoInt > 0 ? produtoAtualSaldoInt : valor);
+    input.focus();
+  }
+}
+
+function definirQtdBaixaTotal() {
+  const input = document.getElementById('input-qtd-baixa');
+  if (input) {
+    input.value = produtoAtualSaldoInt > 0 ? produtoAtualSaldoInt : 1;
+    input.focus();
+  }
+}
+
+function definirQtdEntrada(valor) {
+  const input = document.getElementById('input-qtd-entrada');
+  if (input) {
+    input.value = valor;
+    input.focus();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const linhas = document.querySelectorAll('.linha-produto');
+  const imgElement = document.getElementById('img-inspecao');
+  const semImagemElement = document.getElementById('sem-imagem-inspecao');
+  const nomeElement = document.getElementById('nome-inspecao');
+  const categoriaElement = document.getElementById('categoria-inspecao');
+  const unidadeElement = document.getElementById('unidade-inspecao');
+  const saldoElement = document.getElementById('saldo-inspecao');
+  const minimoElement = document.getElementById('minimo-inspecao');
+  const badgeElement = document.getElementById('badge-status-inspecao');
+  const cardSaldoElement = document.getElementById('card-saldo-inspecao');
+  const formBaixa = document.getElementById('form-baixa-rapida');
+  const formEntrada = document.getElementById('form-adicionar-saldo');
+  const inputQtdBaixa = document.getElementById('input-qtd-baixa');
+  const inputQtdEntrada = document.getElementById('input-qtd-entrada');
+  const linkEditar = document.getElementById('link-editar-inspecao');
+  const linkExcluir = document.getElementById('link-excluir-inspecao');
+
+  function selecionarProduto(tr) {
+    linhas.forEach(function (l) { l.classList.remove('linha-ativa'); });
+    tr.classList.add('linha-ativa');
+
+    const id = tr.getAttribute('data-id');
+    const nome = tr.getAttribute('data-nome') || '';
+    const categoria = tr.getAttribute('data-categoria') || '';
+    const unidade = tr.getAttribute('data-unidade') || '';
+    const quantidadeRaw = parseInt(tr.getAttribute('data-quantidade-raw'), 10) || 0;
+    const minima = tr.getAttribute('data-minima') || '0';
+    const critico = tr.getAttribute('data-critico') === '1';
+    const imagemUrl = tr.getAttribute('data-imagem') || '';
+    const urlBaixa = tr.getAttribute('data-url-baixa') || '';
+    const urlEntrada = tr.getAttribute('data-url-entrada') || '';
+    const urlEditar = tr.getAttribute('data-url-editar') || '';
+    const urlExcluir = tr.getAttribute('data-url-excluir') || '';
+
+    produtoAtualSaldoInt = quantidadeRaw;
+
+    // Atualiza Textos
+    if (nomeElement) nomeElement.textContent = nome;
+    if (categoriaElement) categoriaElement.textContent = '📁 ' + categoria;
+    if (unidadeElement) unidadeElement.textContent = '📏 ' + unidade;
+    if (saldoElement) saldoElement.textContent = quantidadeRaw + ' ' + unidade;
+    if (minimoElement) minimoElement.textContent = minima + ' ' + unidade;
+
+    // Badge e Destaque
+    if (badgeElement) {
+      if (critico) {
+        badgeElement.className = 'status critico';
+        badgeElement.textContent = 'Estoque crítico';
+      } else {
+        badgeElement.className = 'status normal';
+        badgeElement.textContent = 'Normal';
+      }
+    }
+    if (cardSaldoElement) {
+      if (critico) {
+        cardSaldoElement.classList.add('critica');
+      } else {
+        cardSaldoElement.classList.remove('critica');
+      }
+    }
+
+    // Foto (US08)
+    if (imagemUrl) {
+      imgElement.src = imagemUrl;
+      imgElement.alt = nome;
+      imgElement.style.display = 'block';
+      if (semImagemElement) semImagemElement.style.display = 'none';
+    } else {
+      imgElement.src = '';
+      imgElement.style.display = 'none';
+      if (semImagemElement) semImagemElement.style.display = 'flex';
+    }
+
+    // Formulários
+    if (formBaixa) formBaixa.action = urlBaixa;
+    if (formEntrada) formEntrada.action = urlEntrada;
+
+    if (inputQtdBaixa) {
+      inputQtdBaixa.value = '';
+      inputQtdBaixa.max = quantidadeRaw;
+    }
+    if (inputQtdEntrada) {
+      inputQtdEntrada.value = '';
+    }
+
+    // Links
+    if (linkEditar) linkEditar.href = urlEditar;
+    if (linkExcluir) linkExcluir.href = urlExcluir;
+  }
+
+  // Configura item inicial
+  const linhaInicial = document.querySelector('.linha-produto.linha-ativa') || document.querySelector('.linha-produto');
+  if (linhaInicial) {
+    selecionarProduto(linhaInicial);
+  }
+
+  // Evento de clique para seleção imediata
+  linhas.forEach(function (tr) {
+    tr.addEventListener('click', function (e) {
+      if (e.target.tagName === 'A' || e.target.closest('a')) {
+        return;
+      }
+      selecionarProduto(tr);
+    });
+  });
+
+  // Validação estrita de número inteiro na baixa (US05 / RN02)
+  if (formBaixa) {
+    formBaixa.addEventListener('submit', function (e) {
+      const val = inputQtdBaixa.value.trim();
+      if (!val || val.includes('.') || val.includes(',')) {
+        e.preventDefault();
+        alert('Informe apenas um valor inteiro (sem casas decimais) para a retirada.');
+        inputQtdBaixa.focus();
+        return;
+      }
+      const qtd = parseInt(val, 10);
+      if (isNaN(qtd) || qtd <= 0) {
+        e.preventDefault();
+        alert('A quantidade a retirar deve ser um número inteiro maior que zero.');
+        inputQtdBaixa.focus();
+        return;
+      }
+      if (qtd > produtoAtualSaldoInt) {
+        e.preventDefault();
+        alert('Quantidade retirada (' + qtd + ') é maior que o estoque atual (' + produtoAtualSaldoInt + ')!');
+        inputQtdBaixa.focus();
+        return;
+      }
+    });
+  }
+
+  // Validação estrita de número inteiro na entrada
+  if (formEntrada) {
+    formEntrada.addEventListener('submit', function (e) {
+      const val = inputQtdEntrada.value.trim();
+      if (!val || val.includes('.') || val.includes(',')) {
+        e.preventDefault();
+        alert('Informe apenas um valor inteiro (sem casas decimais) para adicionar ao saldo.');
+        inputQtdEntrada.focus();
+        return;
+      }
+      const qtd = parseInt(val, 10);
+      if (isNaN(qtd) || qtd <= 0) {
+        e.preventDefault();
+        alert('A quantidade a adicionar deve ser um número inteiro maior que zero.');
+        inputQtdEntrada.focus();
+        return;
+      }
+    });
+  }
+});
+</script>
 {% endblock %}

@@ -1,0 +1,99 @@
+{% extends "estoque/base.html" %}
+{% block title %}Backups e Planilha Excel | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-cabecalho">
+  <div>
+    <p class="sobretitulo">SEGURANÇA E RELATÓRIOS</p>
+    <h1>Backups e Planilhas Excel</h1>
+    <p>Proteja as informações da marcenaria com backups locais e gere planilhas para cotação e contabilidade.</p>
+  </div>
+  <a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar para o Catálogo</a>
+</div>
+
+<div class="cartoes">
+  <div class="cartao">
+    <div class="cartao-icone">📦</div>
+    <p>Produtos cadastrados</p>
+    <strong>{{ total_produtos }}</strong>
+  </div>
+  <div class="cartao">
+    <div class="cartao-icone">📋</div>
+    <p>Movimentações registradas</p>
+    <strong>{{ total_movimentacoes }}</strong>
+  </div>
+  <div class="cartao">
+    <div class="cartao-icone">💾</div>
+    <p>Status do banco</p>
+    <strong style="font-size:18px; margin-top:10px; color:var(--verde);">SQLite Ativo</strong>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:22px; margin-top:20px;">
+  <!-- Seção 1: Planilha Excel -->
+  <div class="painel">
+    <h2>📊 Planilha Eletrônica Excel (.xlsx)</h2>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:20px;">
+      Gere relatórios padronizados para envio a fornecedores ou contabilidade, ou importe novos insumos em lote.
+    </p>
+
+    <div style="background:#f6faf7; border:1px solid #d7e8dd; border-radius:6px; padding:16px; margin-bottom:20px;">
+      <h3 style="margin:0 0 6px; font-size:14px; color:var(--verde-escuro);">Exportar Lista de Estoque</h3>
+      <p style="margin:0 0 12px; font-size:12px; color:var(--muted);">
+        Arquivo .xlsx formatado contendo Produto, Categoria, Unidade, Quantidade Atual e Mínima.
+      </p>
+      <a class="botao" href="{% url 'estoque:exportar_excel' %}">Baixar Excel (.xlsx)</a>
+    </div>
+
+    <div style="background:#fcfdfc; border:1px solid var(--borda); border-radius:6px; padding:16px;">
+      <h3 style="margin:0 0 6px; font-size:14px; color:var(--texto);">Importar Produtos via Excel</h3>
+      <p style="margin:0 0 12px; font-size:12px; color:var(--muted);">
+        Envie uma planilha com as colunas Produto, Categoria, Unidade, Qtd Atual e Qtd Mínima.
+      </p>
+      <form method="post" action="{% url 'estoque:importar_excel' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="campo" style="margin-bottom:12px;">
+          <input type="file" name="arquivo_excel" accept=".xlsx, .xls" required>
+        </div>
+        <button class="botao secundario" type="submit">Importar Planilha</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Seção 2: Backup Completo (.zip) -->
+  <div class="painel">
+    <h2>💾 Cópia de Segurança Completa (.zip)</h2>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:20px;">
+      Compacta o banco de dados e todo o diretório de imagens de produtos para proteção e migração entre computadores.
+    </p>
+
+    <div style="background:#f6faf7; border:1px solid #d7e8dd; border-radius:6px; padding:16px; margin-bottom:20px;">
+      <h3 style="margin:0 0 6px; font-size:14px; color:var(--verde-escuro);">Exportar Backup Completo</h3>
+      <p style="margin:0 0 12px; font-size:12px; color:var(--muted);">
+        Gera um arquivo .zip contendo todo o banco de dados SQLite e a pasta de fotos de produtos.
+      </p>
+      <a class="botao" href="{% url 'estoque:exportar_backup' %}">Fazer Download do Backup (.zip)</a>
+    </div>
+
+    <div style="background:#fff7f6; border:1px solid #f2d2ce; border-radius:6px; padding:16px;">
+      <h3 style="margin:0 0 6px; font-size:14px; color:var(--vermelho);">Restaurar Cópia de Backup</h3>
+      <p style="margin:0 0 12px; font-size:12px; color:var(--muted);">
+        Substitui o banco de dados e as imagens atuais pelo conteúdo do backup enviado.
+      </p>
+      <form method="post" action="{% url 'estoque:importar_backup' %}" enctype="multipart/form-data" onsubmit="return confirm('ATENÇÃO: A restauração substituirá todos os produtos, categorias e movimentações atuais pelo backup. Deseja continuar?');">
+        {% csrf_token %}
+        <div class="campo" style="margin-bottom:10px;">
+          <input type="file" name="arquivo_backup" accept=".zip" required>
+        </div>
+        <div class="campo campo-checkbox" style="margin-bottom:14px;">
+          <input type="checkbox" name="confirmar_restauracao" value="sim" id="check-confirmar" required>
+          <label for="check-confirmar" style="font-size:12px; color:var(--vermelho); font-weight:700;">
+            Confirmo que desejo substituir os dados atuais por este backup
+          </label>
+        </div>
+        <button class="botao perigo" type="submit">Restaurar Backup</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

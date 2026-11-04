@@ -1,0 +1,64 @@
+{% extends "estoque/base.html" %}
+{% block title %}Acesso ao Sistema | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div style="max-width: 440px; margin: 40px auto;">
+  <div class="painel" style="padding: 30px;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <span class="marca-icone" style="display:inline-block; margin-bottom:10px;">GE</span>
+      <h1 style="font-size: 22px; margin: 0 0 6px;">Controle de Estoque</h1>
+      <p style="color:var(--muted); font-size: 13px; margin: 0;">Faça login para acessar o sistema da marcenaria.</p>
+    </div>
+
+    {% if erro %}
+      <div class="mensagem error" style="margin-bottom: 16px;">{{ erro }}</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'estoque:login' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="campo">
+        <label for="id_username">Nome de usuário:</label>
+        <input type="text" name="username" id="id_username" placeholder="Digite seu usuário" required autofocus>
+      </div>
+
+      <div class="campo">
+        <label for="id_password">Senha:</label>
+        <input type="password" name="password" id="id_password" placeholder="Digite sua senha" required>
+      </div>
+
+      <button class="botao" type="submit" style="width: 100%; padding: 13px; margin-top: 10px;">
+        Entrar no Sistema
+      </button>
+    </form>
+
+    <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--borda);">
+      <p style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin: 0 0 10px; letter-spacing: .5px;">
+        Atalhos Rápidos de Acesso (Demonstração):
+      </p>
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button type="button" class="btn-novo-inline" style="padding:8px 12px; text-align:left; background:#e0f2fe; color:#0369a1; border-color:#bae6fd;" onclick="preencherLogin('operador', 'operador123')">
+          🔨 <strong>Operador (Usuário Comum)</strong>
+          <small style="display:block; color:#0284c7; font-weight:normal;">Pode apenas dar baixas e adicionar saldos no estoque</small>
+        </button>
+
+        <button type="button" class="btn-novo-inline" style="padding:8px 12px; text-align:left; background:#fef3c7; color:#92400e; border-color:#fde68a;" onclick="preencherLogin('user', '')">
+          👑 <strong>Administrador (Gestor)</strong>
+          <small style="display:block; color:#b45309; font-weight:normal;">Acesso completo: cadastro, edição, relatórios e backups</small>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function preencherLogin(usuario, senha) {
+  document.getElementById('id_username').value = usuario;
+  const inputSenha = document.getElementById('id_password');
+  inputSenha.value = senha;
+  inputSenha.focus();
+}
+</script>
+{% endblock %}
+

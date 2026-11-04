@@ -1,15 +1,223 @@
 {% extends "estoque/base.html" %}
 {% block title %}{{ titulo }} | Gerenciador de Estoque{% endblock %}
 {% block content %}
-<div class="pagina-cabecalho"><div><p class="sobretitulo">CATÁLOGO DE MATERIAIS</p><h1>{{ titulo }}</h1><p>Preencha os dados para manter o estoque atualizado.</p></div><a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar</a></div>
-<form method="post" class="painel formulario">{% csrf_token %}
-  {% if form.non_field_errors %}<div class="erro">{{ form.non_field_errors }}</div>{% endif %}
+<div class="pagina-cabecalho">
+  <div>
+    <p class="sobretitulo">CATÁLOGO DE MATERIAIS</p>
+    <h1>{{ titulo }}</h1>
+    <p>Preencha os dados e anexe uma foto para facilitar a identificação na oficina.</p>
+  </div>
+  <a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar para a lista</a>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="painel formulario" id="form-produto">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="erro">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  {% if produto and produto.imagem %}
+    <div class="campo">
+      <label>Foto atual cadastrada:</label>
+      <div style="display:flex; align-items:center; gap:16px; margin-top: 6px;">
+        <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" style="max-height: 120px; max-width: 180px; object-fit: contain; border-radius: 6px; border: 1px solid var(--borda); background: #fafafa; padding: 4px;">
+        <small style="color:var(--muted)">Envie um novo arquivo no campo de foto abaixo para substituir esta imagem.</small>
+      </div>
+    </div>
+  {% endif %}
+
   {% for field in form %}
-  <div class="campo {% if field.name == 'alerta_manual' %}campo-checkbox{% endif %}">
-    {% if field.name == 'alerta_manual' %}{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
-    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<small class="erro">{{ error }}</small>{% endfor %}
+  <div class="campo {% if field.name == 'alerta_manual' %}campo-checkbox{% endif %}" id="campo-{{ field.name }}">
+    {% if field.name == 'categoria' %}
+      <div class="rotulo-com-acao">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        <button type="button" class="btn-novo-inline" onclick="abrirModal('modal-categoria')">＋ Nova Categoria</button>
+      </div>
+      {{ field }}
+    {% elif field.name == 'unidade' %}
+      <div class="rotulo-com-acao">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        <button type="button" class="btn-novo-inline" onclick="abrirModal('modal-unidade')">＋ Nova Unidade</button>
+      </div>
+      {{ field }}
+    {% elif field.name == 'alerta_manual' %}
+      {{ field }}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {% else %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+    {% endif %}
+
+    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+    {% for error in field.errors %}<small class="erro">{{ error }}</small>{% endfor %}
   </div>
   {% endfor %}
-  <div class="acoes-form"><button class="botao" type="submit">Salvar material</button><a class="botao secundario" href="{% url 'estoque:lista' %}">Cancelar</a></div>
+
+  <div class="acoes-form">
+    <button class="botao" type="submit">Salvar material</button>
+    <a class="botao secundario" href="{% url 'estoque:lista' %}">Cancelar</a>
+  </div>
 </form>
+
+<!-- Modal: Criar Nova Categoria (US03 / Quadro 6) -->
+<div id="modal-categoria" class="modal-backdrop" style="display:none;">
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <h3>📁 Nova Categoria</h3>
+      <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-categoria')">&times;</button>
+    </div>
+    <div class="modal-corpo">
+      <p style="color:var(--muted); font-size:12px; margin-top:0;">Cadastre um novo grupo para classificar materiais.</p>
+      <div class="campo">
+        <label for="novo-cat-nome">Nome da categoria:</label>
+        <input type="text" id="novo-cat-nome" placeholder="Ex.: Puxadores, Lixas, Químicos">
+        <small class="erro" id="erro-modal-categoria" style="display:none;"></small>
+      </div>
+    </div>
+    <div class="modal-rodape">
+      <button type="button" class="botao secundario" onclick="fecharModal('modal-categoria')">Cancelar</button>
+      <button type="button" class="botao" onclick="salvarNovaCategoria()">Salvar e Selecionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Criar Nova Unidade de Medida (US04 / Quadro 6) -->
+<div id="modal-unidade" class="modal-backdrop" style="display:none;">
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <h3>📏 Nova Unidade de Medida</h3>
+      <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-unidade')">&times;</button>
+    </div>
+    <div class="modal-corpo">
+      <p style="color:var(--muted); font-size:12px; margin-top:0;">Cadastre uma nova métrica para quantificar seus insumos.</p>
+      <div class="campo">
+        <label for="novo-unid-nome">Nome da unidade:</label>
+        <input type="text" id="novo-unid-nome" placeholder="Ex.: Metro Linear, Par, Caixa">
+      </div>
+      <div class="campo">
+        <label for="novo-unid-sigla">Sigla:</label>
+        <input type="text" id="novo-unid-sigla" placeholder="Ex.: ml, par, cx" style="max-width:140px;">
+        <small class="erro" id="erro-modal-unidade" style="display:none;"></small>
+      </div>
+    </div>
+    <div class="modal-rodape">
+      <button type="button" class="botao secundario" onclick="fecharModal('modal-unidade')">Cancelar</button>
+      <button type="button" class="botao" onclick="salvarNovaUnidade()">Salvar e Selecionar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirModal(id) {
+  document.getElementById(id).style.display = 'flex';
+  const primeiroInput = document.querySelector('#' + id + ' input');
+  if (primeiroInput) primeiroInput.focus();
+}
+
+function fecharModal(id) {
+  document.getElementById(id).style.display = 'none';
+  const erroCat = document.getElementById('erro-modal-categoria');
+  const erroUnid = document.getElementById('erro-modal-unidade');
+  if (erroCat) erroCat.style.display = 'none';
+  if (erroUnid) erroUnid.style.display = 'none';
+}
+
+function getCsrfToken() {
+  const token = document.querySelector('[name=csrfmiddlewaretoken]');
+  return token ? token.value : '';
+}
+
+function salvarNovaCategoria() {
+  const nomeInput = document.getElementById('novo-cat-nome');
+  const erroElement = document.getElementById('erro-modal-categoria');
+  const nome = nomeInput.value.trim();
+
+  if (!nome) {
+    erroElement.textContent = 'Informe o nome da categoria.';
+    erroElement.style.display = 'block';
+    nomeInput.focus();
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('nome', nome);
+
+  fetch("{% url 'estoque:api_criar_categoria' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrfToken() },
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.sucesso) {
+      const select = document.getElementById('id_categoria');
+      if (select) {
+        let opt = Array.from(select.options).find(o => o.value == data.id);
+        if (!opt) {
+          opt = new Option(data.nome, data.id);
+          select.add(opt);
+        }
+        select.value = data.id;
+      }
+      nomeInput.value = '';
+      fecharModal('modal-categoria');
+    } else {
+      erroElement.textContent = data.erro || 'Erro ao criar categoria.';
+      erroElement.style.display = 'block';
+    }
+  })
+  .catch(err => {
+    erroElement.textContent = 'Falha na comunicação com o servidor.';
+    erroElement.style.display = 'block';
+  });
+}
+
+function salvarNovaUnidade() {
+  const nomeInput = document.getElementById('novo-unid-nome');
+  const siglaInput = document.getElementById('novo-unid-sigla');
+  const erroElement = document.getElementById('erro-modal-unidade');
+  const nome = nomeInput.value.trim();
+  const sigla = siglaInput.value.trim();
+
+  if (!nome || !sigla) {
+    erroElement.textContent = 'Informe o nome e a sigla da unidade.';
+    erroElement.style.display = 'block';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('nome', nome);
+  formData.append('sigla', sigla);
+
+  fetch("{% url 'estoque:api_criar_unidade' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrfToken() },
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.sucesso) {
+      const select = document.getElementById('id_unidade');
+      if (select) {
+        let opt = Array.from(select.options).find(o => o.value == data.id);
+        if (!opt) {
+          opt = new Option(data.nome, data.id);
+          select.add(opt);
+        }
+        select.value = data.id;
+      }
+      nomeInput.value = '';
+      siglaInput.value = '';
+      fecharModal('modal-unidade');
+    } else {
+      erroElement.textContent = data.erro || 'Erro ao criar unidade de medida.';
+      erroElement.style.display = 'block';
+    }
+  })
+  .catch(err => {
+    erroElement.textContent = 'Falha na comunicação com o servidor.';
+    erroElement.style.display = 'block';
+  });
+}
+</script>
 {% endblock %}

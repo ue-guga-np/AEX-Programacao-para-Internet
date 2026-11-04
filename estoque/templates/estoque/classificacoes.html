@@ -1,0 +1,250 @@
+{% extends "estoque/base.html" %}
+{% block title %}Categorias e Unidades | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-cabecalho">
+  <div>
+    <p class="sobretitulo">CATÁLOGO E ORGANIZAÇÃO</p>
+    <h1>Categorias e Unidades de Medida</h1>
+    <p>Cadastre, renomeie e gerencie os grupos e padrões de medição dos insumos da oficina.</p>
+  </div>
+  <a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar para Materiais</a>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:22px; align-items:start;">
+  <!-- Seção 1: Categorias (US03 / RF02) -->
+  <div class="painel" style="margin-top:0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div>
+        <h2 style="margin:0 0 4px;">📁 Categorias</h2>
+        <p style="color:var(--muted); font-size:12px; margin:0;">Organizam os materiais por tipo.</p>
+      </div>
+      <button class="botao" type="button" onclick="abrirModal('modal-criar-categoria')">＋ Nova</button>
+    </div>
+
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Materiais</th>
+            <th style="text-align:right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in categorias %}
+          <tr>
+            <td><strong>{{ cat.nome }}</strong></td>
+            <td>
+              <span class="inspecao-tag" style="background:#eef4f0;">
+                {{ cat.total_produtos }} produto{{ cat.total_produtos|pluralize:"s" }}
+              </span>
+            </td>
+            <td style="text-align:right;">
+              <div class="acoes" style="justify-content:flex-end;">
+                <button type="button" class="btn-novo-inline" onclick="abrirEditarCategoria('{{ cat.pk }}', '{{ cat.nome|escapejs }}')">Editar</button>
+                {% if cat.total_produtos > 0 %}
+                  <span class="status" style="background:#f4f6f5; color:var(--muted); cursor:not-allowed;" title="Bloqueado (RN01): Esta categoria possui materiais vinculados e não pode ser excluída.">Em uso</span>
+                {% else %}
+                  <form method="post" action="{% url 'estoque:excluir_categoria' cat.pk %}" style="display:inline;" onsubmit="return confirm('Deseja excluir a categoria “{{ cat.nome }}”?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-novo-inline" style="background:#fff0ed; color:var(--vermelho); border-color:#f8d7da;">Excluir</button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="vazio">Nenhuma categoria cadastrada.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="nota">Regra de Negócio (RN01): Uma categoria com produtos cadastrados não pode ser excluída.</p>
+  </div>
+
+  <!-- Seção 2: Unidades de Medida (US04 / RF03) -->
+  <div class="painel" style="margin-top:0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div>
+        <h2 style="margin:0 0 4px;">📏 Unidades de Medida</h2>
+        <p style="color:var(--muted); font-size:12px; margin:0;">Padrões de contagem e medição dos materiais.</p>
+      </div>
+      <button class="botao" type="button" onclick="abrirModal('modal-criar-unidade')">＋ Nova</button>
+    </div>
+
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Sigla</th>
+            <th>Materiais</th>
+            <th style="text-align:right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for unid in unidades %}
+          <tr>
+            <td><strong>{{ unid.nome }}</strong></td>
+            <td><code>{{ unid.sigla }}</code></td>
+            <td>
+              <span class="inspecao-tag" style="background:#eef4f0;">
+                {{ unid.total_produtos }} produto{{ unid.total_produtos|pluralize:"s" }}
+              </span>
+            </td>
+            <td style="text-align:right;">
+              <div class="acoes" style="justify-content:flex-end;">
+                <button type="button" class="btn-novo-inline" onclick="abrirEditarUnidade('{{ unid.pk }}', '{{ unid.nome|escapejs }}', '{{ unid.sigla|escapejs }}')">Editar</button>
+                {% if unid.total_produtos > 0 %}
+                  <span class="status" style="background:#f4f6f5; color:var(--muted); cursor:not-allowed;" title="Bloqueado (RN01): Esta unidade está em uso por materiais e não pode ser excluída.">Em uso</span>
+                {% else %}
+                  <form method="post" action="{% url 'estoque:excluir_unidade' unid.pk %}" style="display:inline;" onsubmit="return confirm('Deseja excluir a unidade “{{ unid.nome }}”?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-novo-inline" style="background:#fff0ed; color:var(--vermelho); border-color:#f8d7da;">Excluir</button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="vazio">Nenhuma unidade de medida cadastrada.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="nota">Regra de Negócio (RN01): Uma unidade em uso por materiais não pode ser excluída.</p>
+  </div>
+</div>
+
+<!-- Modal: Criar Categoria -->
+<div id="modal-criar-categoria" class="modal-backdrop" style="display:none;">
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <h3>📁 Nova Categoria</h3>
+      <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-criar-categoria')">&times;</button>
+    </div>
+    <form method="post" action="{% url 'estoque:criar_categoria' %}">
+      {% csrf_token %}
+      <div class="modal-corpo">
+        <div class="campo">
+          <label for="input-criar-cat">Nome da categoria:</label>
+          <input type="text" id="input-criar-cat" name="nome" placeholder="Ex.: Adesivos e Colas" required>
+        </div>
+      </div>
+      <div class="modal-rodape">
+        <button type="button" class="botao secundario" onclick="fecharModal('modal-criar-categoria')">Cancelar</button>
+        <button type="submit" class="botao">Salvar Categoria</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Editar Categoria -->
+<div id="modal-editar-categoria" class="modal-backdrop" style="display:none;">
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <h3>✏️ Editar Categoria</h3>
+      <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-editar-categoria')">&times;</button>
+    </div>
+    <form method="post" id="form-editar-cat" action="">
+      {% csrf_token %}
+      <div class="modal-corpo">
+        <div class="campo">
+          <label for="input-edit-cat">Nome da categoria:</label>
+          <input type="text" id="input-edit-cat" name="nome" required>
+        </div>
+      </div>
+      <div class="modal-rodape">
+        <button type="button" class="botao secundario" onclick="fecharModal('modal-editar-categoria')">Cancelar</button>
+        <button type="submit" class="botao">Atualizar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Criar Unidade -->
+<div id="modal-criar-unidade" class="modal-backdrop" style="display:none;">
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <h3>📏 Nova Unidade de Medida</h3>
+      <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-criar-unidade')">&times;</button>
+    </div>
+    <form method="post" action="{% url 'estoque:criar_unidade' %}">
+      {% csrf_token %}
+      <div class="modal-corpo">
+        <div class="campo">
+          <label for="input-criar-unid-nome">Nome da unidade:</label>
+          <input type="text" id="input-criar-unid-nome" name="nome" placeholder="Ex.: Metro Quadrado" required>
+        </div>
+        <div class="campo">
+          <label for="input-criar-unid-sigla">Sigla:</label>
+          <input type="text" id="input-criar-unid-sigla" name="sigla" placeholder="Ex.: m²" style="max-width:140px;" required>
+        </div>
+      </div>
+      <div class="modal-rodape">
+        <button type="button" class="botao secundario" onclick="fecharModal('modal-criar-unidade')">Cancelar</button>
+        <button type="submit" class="botao">Salvar Unidade</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Editar Unidade -->
+<div id="modal-editar-unidade" class="modal-backdrop" style="display:none;">
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <h3>✏️ Editar Unidade de Medida</h3>
+      <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-editar-unidade')">&times;</button>
+    </div>
+    <form method="post" id="form-editar-unid" action="">
+      {% csrf_token %}
+      <div class="modal-corpo">
+        <div class="campo">
+          <label for="input-edit-unid-nome">Nome da unidade:</label>
+          <input type="text" id="input-edit-unid-nome" name="nome" required>
+        </div>
+        <div class="campo">
+          <label for="input-edit-unid-sigla">Sigla:</label>
+          <input type="text" id="input-edit-unid-sigla" name="sigla" style="max-width:140px;" required>
+        </div>
+      </div>
+      <div class="modal-rodape">
+        <button type="button" class="botao secundario" onclick="fecharModal('modal-editar-unidade')">Cancelar</button>
+        <button type="submit" class="botao">Atualizar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function abrirModal(id) {
+  document.getElementById(id).style.display = 'flex';
+  const primeiroInput = document.querySelector('#' + id + ' input');
+  if (primeiroInput) primeiroInput.focus();
+}
+
+function fecharModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function abrirEditarCategoria(id, nome) {
+  const form = document.getElementById('form-editar-cat');
+  form.action = '/classificacoes/categoria/' + id + '/editar/';
+  document.getElementById('input-edit-cat').value = nome;
+  abrirModal('modal-editar-categoria');
+}
+
+function abrirEditarUnidade(id, nome, sigla) {
+  const form = document.getElementById('form-editar-unid');
+  form.action = '/classificacoes/unidade/' + id + '/editar/';
+  document.getElementById('input-edit-unid-nome').value = nome;
+  document.getElementById('input-edit-unid-sigla').value = sigla;
+  abrirModal('modal-editar-unidade');
+}
+</script>
+{% endblock %}
+

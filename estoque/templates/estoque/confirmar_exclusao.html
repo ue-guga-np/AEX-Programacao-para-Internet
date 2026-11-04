@@ -1,6 +1,31 @@
 {% extends "estoque/base.html" %}
-{% block title %}Excluir material{% endblock %}
+{% block title %}Excluir material | Gerenciador de Estoque{% endblock %}
 {% block content %}
-<div class="pagina-cabecalho"><div><p class="sobretitulo">CONFIRMAÇÃO</p><h1>Excluir material</h1></div></div>
-<section class="painel confirmacao"><div class="alerta-grande">!</div><h2>Deseja remover “{{ produto.nome }}”?</h2><p>Esta ação não poderá ser desfeita.</p><form method="post">{% csrf_token %}<button class="botao perigo" type="submit">Sim, excluir</button><a class="botao secundario" href="{% url 'estoque:lista' %}">Cancelar</a></form></section>
+<div class="pagina-cabecalho">
+  <div>
+    <p class="sobretitulo">CONFIRMAÇÃO</p>
+    <h1>Excluir material</h1>
+    <p>Confirme a exclusão do produto do catálogo.</p>
+  </div>
+  <a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar</a>
+</div>
+
+<section class="painel confirmacao">
+  <div class="alerta-grande">!</div>
+  <h2>Deseja remover “{{ produto.nome }}”?</h2>
+  
+  {% if total_movimentacoes > 0 %}
+    <p style="color:var(--vermelho); font-weight:600; margin-bottom:12px;">
+      Aviso: Este material possui {{ total_movimentacoes }} movimentação(ões) registrada(s) no histórico que também serão removidas.
+    </p>
+  {% else %}
+    <p>Esta ação não poderá ser desfeita.</p>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <button class="botao perigo" type="submit">Sim, excluir material</button>
+    <a class="botao secundario" href="{% url 'estoque:lista' %}">Cancelar</a>
+  </form>
+</section>
 {% endblock %}

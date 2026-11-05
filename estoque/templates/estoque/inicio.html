@@ -3,80 +3,111 @@
 {% block content %}
 <section class="boas-vindas">
   <div>
-    <p class="sobretitulo">CONTROLE DE MATERIAIS</p>
-    <h1>Estoque sob controle.</h1>
-    <p>Organize os materiais da marcenaria, registre baixas diárias e acompanhe reposições.</p>
+    <p class="sobretitulo">PAINEL DA OFICINA</p>
+    <h1>Matéria-prima, sempre em ordem.</h1>
+    <p>Acompanhe os materiais da marcenaria, confira o que precisa de atenção e mantenha cada movimentação registrada.</p>
     {% if user.is_staff or user.is_superuser %}
-      <a class="botao claro" href="{% url 'estoque:criar' %}">＋ Cadastrar material</a>
+      <a class="botao" href="{% url 'estoque:criar' %}">Cadastrar material</a>
     {% else %}
-      <a class="botao claro" href="{% url 'estoque:lista' %}">⚡ Ir para o Catálogo e Baixas</a>
+      <a class="botao" href="{% url 'estoque:lista' %}">Consultar materiais</a>
     {% endif %}
   </div>
-  <div class="ilustracao">▤</div>
 </section>
 
-<div class="cartoes">
+<section class="cartoes" aria-label="Resumo do estoque">
   <article class="cartao">
-    <span class="cartao-icone">▦</span>
-    <p>Materiais cadastrados</p>
+    <p>Materiais no catálogo</p>
     <strong>{{ total_produtos }}</strong>
-    <a href="{% url 'estoque:lista' %}">Ver materiais →</a>
+    <a href="{% url 'estoque:lista' %}">Ver catálogo</a>
   </article>
   <article class="cartao alerta-cartao">
-    <span class="cartao-icone">!</span>
-    <p>Estoque crítico</p>
+    <p>Materiais que precisam de atenção</p>
     <strong>{{ total_alertas }}</strong>
-    <a href="{% url 'estoque:lista' %}">Conferir alertas →</a>
+    <a href="{% url 'estoque:lista' %}">Conferir estoque</a>
   </article>
   <article class="cartao">
-    <span class="cartao-icone">↔</span>
     <p>Movimentações registradas</p>
-    <strong>{{ ultimas_movimentacoes|length }}</strong>
-    <a href="{% url 'estoque:movimentacoes' %}">Ver histórico →</a>
+    <strong>{{ total_movimentacoes }}</strong>
+    <a href="{% url 'estoque:movimentacoes' %}">Abrir histórico</a>
   </article>
+</section>
+
+<div class="dashboard-detalhes">
+  <section class="painel">
+    <div class="painel-cabecalho">
+      <div>
+        <p class="sobretitulo">ACOMPANHAMENTO</p>
+        <h2>Materiais para revisar</h2>
+        <p>Itens no limite mínimo ou marcados para atenção.</p>
+      </div>
+      <a class="botao secundario" href="{% url 'estoque:lista' %}">Ver catálogo</a>
+    </div>
+    <ul class="dashboard-lista">
+      {% for produto in produtos_criticos %}
+        <li>
+          <a href="{% url 'estoque:lista' %}?selecionado={{ produto.pk }}">{{ produto.nome }}</a>
+          <small>{{ produto.categoria.nome }} · mínimo {{ produto.quantidade_minima|floatformat:"-2" }} {{ produto.unidade.sigla }}</small>
+          <span class="status critico">{{ produto.quantidade|floatformat:"-2" }} {{ produto.unidade.sigla }} disponíveis</span>
+        </li>
+      {% empty %}
+        <li class="dashboard-vazio">Nenhum material precisa de reposição no momento.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="painel">
+    <div class="painel-cabecalho">
+      <div>
+        <p class="sobretitulo">MOVIMENTAÇÃO RECENTE</p>
+        <h2>Últimos registros</h2>
+        <p>Atividade mais recente do estoque.</p>
+      </div>
+      <a class="botao secundario" href="{% url 'estoque:movimentacoes' %}">Histórico completo</a>
+    </div>
+    <ul class="dashboard-lista">
+      {% for item in ultimas_movimentacoes %}
+        <li>
+          <a href="{% url 'estoque:lista' %}?selecionado={{ item.produto_id }}">{{ item.produto.nome }}</a>
+          <small>{{ item.data|date:"d/m/Y H:i" }} · {% if item.tipo == "S" %}Saída{% else %}Entrada{% endif %}</small>
+          <span class="status {% if item.tipo == 'S' %}critico{% else %}normal{% endif %}">{% if item.tipo == "S" %}−{% else %}+{% endif %}{{ item.quantidade|floatformat:"-2" }} {{ item.produto.unidade.sigla }}</span>
+        </li>
+      {% empty %}
+        <li class="dashboard-vazio">Ainda não há movimentações registradas.</li>
+      {% endfor %}
+    </ul>
+  </section>
 </div>
 
 <section class="painel">
   <div class="painel-cabecalho">
     <div>
-      <h2>Comece por aqui</h2>
-      <p>Atalhos rápidos para as operações da marcenaria.</p>
+      <p class="sobretitulo">ACESSO RÁPIDO</p>
+      <h2>O que você precisa fazer?</h2>
+      <p>Atalhos para as tarefas mais frequentes.</p>
     </div>
   </div>
   <div class="atalhos">
     <a href="{% url 'estoque:lista' %}">
       <b>01</b>
-      <span>
-        <strong>Consultar materiais e dar baixa</strong>
-        <small>Veja quantidades, fotos e faça retiradas ou entradas rápidas.</small>
-      </span>
-      <i>→</i>
+      <span><strong>Consultar materiais e movimentar saldo</strong><small>Pesquise itens, registre retiradas e adicione entradas.</small></span>
     </a>
     {% if user.is_staff or user.is_superuser %}
       <a href="{% url 'estoque:criar' %}">
         <b>02</b>
-        <span>
-          <strong>Novo cadastro</strong>
-          <small>Adicione um material ao catálogo com foto e quantidade de aviso.</small>
-        </span>
-        <i>→</i>
+        <span><strong>Cadastrar novo material</strong><small>Inclua dados, unidade, nível mínimo e foto.</small></span>
+      </a>
+      <a href="{% url 'estoque:classificacoes' %}">
+        <b>03</b>
+        <span><strong>Organizar categorias e unidades</strong><small>Mantenha o catálogo consistente.</small></span>
       </a>
       <a href="{% url 'estoque:painel_backups' %}">
-        <b>03</b>
-        <span>
-          <strong>Backups e Planilhas Excel</strong>
-          <small>Exporte relatórios e cópias de segurança do sistema.</small>
-        </span>
-        <i>→</i>
+        <b>04</b>
+        <span><strong>Relatórios e cópias de segurança</strong><small>Exporte planilhas ou gerencie backups.</small></span>
       </a>
     {% else %}
       <a href="{% url 'estoque:movimentacoes' %}">
         <b>02</b>
-        <span>
-          <strong>Histórico de movimentações</strong>
-          <small>Confira as entradas e retiradas de insumos na oficina.</small>
-        </span>
-        <i>→</i>
+        <span><strong>Histórico de movimentações</strong><small>Confira as entradas e retiradas registradas.</small></span>
       </a>
     {% endif %}
   </div>

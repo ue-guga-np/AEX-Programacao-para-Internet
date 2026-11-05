@@ -6,39 +6,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Gerenciador de Estoque{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'estoque/css/estilo.css' %}">
+  <link rel="stylesheet" href="{% static 'estoque/css/identidade.css' %}">
 </head>
 <body>
 <header class="topo">
-  <a class="marca" href="{% url 'estoque:inicio' %}">
+  <a class="marca" href="{% url 'estoque:inicio' %}" aria-label="Início do Gerenciador de Estoque">
     <span class="marca-icone">GE</span>
-    <span>Gerenciador de Estoque<small>Marcenaria</small></span>
+    <span class="marca-texto"><strong>Gerenciador de Estoque</strong><small>Marcenaria</small></span>
   </a>
 
   <nav>
     {% if user.is_authenticated %}
-      <a href="{% url 'estoque:inicio' %}">Início</a>
-      <a href="{% url 'estoque:lista' %}">Materiais</a>
-      <a href="{% url 'estoque:movimentacoes' %}">Movimentações</a>
+      <a class="{% if request.resolver_match.url_name == 'inicio' %}ativo{% endif %}" href="{% url 'estoque:inicio' %}">Início</a>
+      <a class="{% if request.resolver_match.url_name == 'lista' or request.resolver_match.url_name == 'criar' or request.resolver_match.url_name == 'editar' %}ativo{% endif %}" href="{% url 'estoque:lista' %}">Materiais</a>
+      <a class="{% if request.resolver_match.url_name == 'movimentacoes' %}ativo{% endif %}" href="{% url 'estoque:movimentacoes' %}">Movimentações</a>
       {% if user.is_staff or user.is_superuser %}
-        <a href="{% url 'estoque:classificacoes' %}">Categorias & Unidades</a>
-        <a href="{% url 'estoque:painel_backups' %}">Backups & Excel</a>
+        <a class="{% if request.resolver_match.url_name == 'classificacoes' %}ativo{% endif %}" href="{% url 'estoque:classificacoes' %}">Categorias e unidades</a>
+        <a class="{% if request.resolver_match.url_name == 'painel_backups' %}ativo{% endif %}" href="{% url 'estoque:painel_backups' %}">Relatórios e cópias</a>
       {% endif %}
     {% endif %}
   </nav>
 
   <div class="topo-usuario">
     {% if user.is_authenticated %}
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-weight:600; color:var(--texto); font-size:12px;">{{ user.first_name|default:user.username }}</span>
+      <div class="usuario-acoes">
+        <span class="usuario-nome">{{ user.first_name|default:user.username }}</span>
         {% if user.is_staff or user.is_superuser %}
-          <span class="perfil-tag admin" title="Perfil com acesso completo">👑 Administrador</span>
+          <span class="perfil-tag admin" title="Perfil com acesso completo">Administrador</span>
         {% else %}
-          <span class="perfil-tag operador" title="Perfil de operador: apenas manipulação de saldo e consultas">🔨 Operador</span>
+          <span class="perfil-tag operador" title="Perfil de operador: apenas manipulação de saldo e consultas">Operador</span>
         {% endif %}
-        <a class="botao secundario" href="{% url 'estoque:logout' %}" style="padding:6px 10px; font-size:11px;" title="Encerrar sessão">Sair</a>
+        <a class="botao secundario botao-compacto" href="{% url 'estoque:logout' %}" title="Encerrar sessão">Sair</a>
       </div>
     {% else %}
-      <a class="botao" href="{% url 'estoque:login' %}" style="padding:8px 14px;">Entrar</a>
+      <a class="botao botao-compacto" href="{% url 'estoque:login' %}">Entrar</a>
     {% endif %}
   </div>
 </header>

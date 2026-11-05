@@ -78,11 +78,17 @@ def fazer_logout(request):
 # Página inicial com resumo geral do sistema
 @requer_login
 def inicio(request):
-    produtos = Produto.objects.all()
+    produtos = list(Produto.objects.select_related("categoria", "unidade").all())
+    produtos_criticos = [produto for produto in produtos if produto.estoque_critico]
+    ultimas_movimentacoes = MovimentacaoEstoque.objects.select_related(
+        "produto", "produto__categoria", "produto__unidade", "usuario"
+    )[:5]
     context = {
-        "total_produtos": produtos.count(),
-        "total_alertas": sum(1 for p in produtos if p.estoque_critico),
-        "ultimas_movimentacoes": MovimentacaoEstoque.objects.select_related("produto", "produto__categoria", "produto__unidade", "usuario")[:5],
+        "total_produtos": len(produtos),
+        "total_alertas": len(produtos_criticos),
+        "produtos_criticos": produtos_criticos[:5],
+        "total_movimentacoes": MovimentacaoEstoque.objects.count(),
+        "ultimas_movimentacoes": ultimas_movimentacoes,
     }
     return render(request, "estoque/inicio.html", context)
 

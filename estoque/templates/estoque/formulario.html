@@ -19,9 +19,9 @@
   {% if produto and produto.imagem %}
     <div class="campo">
       <label>Foto atual cadastrada:</label>
-      <div style="display:flex; align-items:center; gap:16px; margin-top: 6px;">
-        <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" style="max-height: 120px; max-width: 180px; object-fit: contain; border-radius: 6px; border: 1px solid var(--borda); background: #fafafa; padding: 4px;">
-        <small style="color:var(--muted)">Envie um novo arquivo no campo de foto abaixo para substituir esta imagem.</small>
+      <div class="foto-atual">
+        <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}">
+        <small>Envie um novo arquivo no campo de foto abaixo para substituir esta imagem.</small>
       </div>
     </div>
   {% endif %}
@@ -31,13 +31,13 @@
     {% if field.name == 'categoria' %}
       <div class="rotulo-com-acao">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        <button type="button" class="btn-novo-inline" onclick="abrirModal('modal-categoria')">＋ Nova Categoria</button>
+        <button type="button" class="btn-novo-inline" onclick="abrirModal('modal-categoria')">Nova Categoria</button>
       </div>
       {{ field }}
     {% elif field.name == 'unidade' %}
       <div class="rotulo-com-acao">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        <button type="button" class="btn-novo-inline" onclick="abrirModal('modal-unidade')">＋ Nova Unidade</button>
+        <button type="button" class="btn-novo-inline" onclick="abrirModal('modal-unidade')">Nova Unidade</button>
       </div>
       {{ field }}
     {% elif field.name == 'alerta_manual' %}
@@ -63,11 +63,11 @@
 <div id="modal-categoria" class="modal-backdrop" style="display:none;">
   <div class="modal-caixa">
     <div class="modal-cabecalho">
-      <h3>📁 Nova Categoria</h3>
+      <h3>Nova Categoria</h3>
       <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-categoria')">&times;</button>
     </div>
     <div class="modal-corpo">
-      <p style="color:var(--muted); font-size:12px; margin-top:0;">Cadastre um novo grupo para classificar materiais.</p>
+      <p class="modal-descricao">Cadastre um novo grupo para classificar materiais.</p>
       <div class="campo">
         <label for="novo-cat-nome">Nome da categoria:</label>
         <input type="text" id="novo-cat-nome" placeholder="Ex.: Puxadores, Lixas, Químicos">
@@ -85,18 +85,18 @@
 <div id="modal-unidade" class="modal-backdrop" style="display:none;">
   <div class="modal-caixa">
     <div class="modal-cabecalho">
-      <h3>📏 Nova Unidade de Medida</h3>
+      <h3>Nova Unidade de Medida</h3>
       <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-unidade')">&times;</button>
     </div>
     <div class="modal-corpo">
-      <p style="color:var(--muted); font-size:12px; margin-top:0;">Cadastre uma nova métrica para quantificar seus insumos.</p>
+      <p class="modal-descricao">Cadastre uma nova métrica para quantificar seus insumos.</p>
       <div class="campo">
         <label for="novo-unid-nome">Nome da unidade:</label>
         <input type="text" id="novo-unid-nome" placeholder="Ex.: Metro Linear, Par, Caixa">
       </div>
       <div class="campo">
         <label for="novo-unid-sigla">Sigla:</label>
-        <input type="text" id="novo-unid-sigla" placeholder="Ex.: ml, par, cx" style="max-width:140px;">
+        <input class="campo-sigla" type="text" id="novo-unid-sigla" placeholder="Ex.: ml, par, cx">
         <small class="erro" id="erro-modal-unidade" style="display:none;"></small>
       </div>
     </div>

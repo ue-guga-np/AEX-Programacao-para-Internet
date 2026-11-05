@@ -10,15 +10,15 @@
   <a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar para Materiais</a>
 </div>
 
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:22px; align-items:start;">
+<div class="grid-colunas">
   <!-- Seção 1: Categorias (US03 / RF02) -->
-  <div class="painel" style="margin-top:0;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+  <div class="painel">
+    <div class="secao-cabecalho">
       <div>
-        <h2 style="margin:0 0 4px;">📁 Categorias</h2>
-        <p style="color:var(--muted); font-size:12px; margin:0;">Organizam os materiais por tipo.</p>
+        <h2>Categorias</h2>
+        <p>Organizam os materiais por tipo.</p>
       </div>
-      <button class="botao" type="button" onclick="abrirModal('modal-criar-categoria')">＋ Nova</button>
+      <button class="botao" type="button" onclick="abrirModal('modal-criar-categoria')">Nova</button>
     </div>
 
     <div class="tabela-wrap">
@@ -27,7 +27,7 @@
           <tr>
             <th>Nome</th>
             <th>Materiais</th>
-            <th style="text-align:right;">Ações</th>
+            <th class="alinha-direita">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -35,19 +35,19 @@
           <tr>
             <td><strong>{{ cat.nome }}</strong></td>
             <td>
-              <span class="inspecao-tag" style="background:#eef4f0;">
+              <span class="inspecao-tag">
                 {{ cat.total_produtos }} produto{{ cat.total_produtos|pluralize:"s" }}
               </span>
             </td>
-            <td style="text-align:right;">
-              <div class="acoes" style="justify-content:flex-end;">
+            <td class="alinha-direita">
+              <div class="acoes acoes-direita">
                 <button type="button" class="btn-novo-inline" onclick="abrirEditarCategoria('{{ cat.pk }}', '{{ cat.nome|escapejs }}')">Editar</button>
                 {% if cat.total_produtos > 0 %}
-                  <span class="status" style="background:#f4f6f5; color:var(--muted); cursor:not-allowed;" title="Bloqueado (RN01): Esta categoria possui materiais vinculados e não pode ser excluída.">Em uso</span>
+                  <span class="status status-em-uso" title="Bloqueado (RN01): Esta categoria possui materiais vinculados e não pode ser excluída.">Em uso</span>
                 {% else %}
-                  <form method="post" action="{% url 'estoque:excluir_categoria' cat.pk %}" style="display:inline;" onsubmit="return confirm('Deseja excluir a categoria “{{ cat.nome }}”?');">
+                  <form method="post" action="{% url 'estoque:excluir_categoria' cat.pk %}" class="form-inline" onsubmit="return confirm('Deseja excluir a categoria “{{ cat.nome }}”?');">
                     {% csrf_token %}
-                    <button type="submit" class="btn-novo-inline" style="background:#fff0ed; color:var(--vermelho); border-color:#f8d7da;">Excluir</button>
+                    <button type="submit" class="btn-novo-inline botao-remover-inline">Excluir</button>
                   </form>
                 {% endif %}
               </div>
@@ -65,13 +65,13 @@
   </div>
 
   <!-- Seção 2: Unidades de Medida (US04 / RF03) -->
-  <div class="painel" style="margin-top:0;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+  <div class="painel">
+    <div class="secao-cabecalho">
       <div>
-        <h2 style="margin:0 0 4px;">📏 Unidades de Medida</h2>
-        <p style="color:var(--muted); font-size:12px; margin:0;">Padrões de contagem e medição dos materiais.</p>
+        <h2>Unidades de Medida</h2>
+        <p>Padrões de contagem e medição dos materiais.</p>
       </div>
-      <button class="botao" type="button" onclick="abrirModal('modal-criar-unidade')">＋ Nova</button>
+      <button class="botao" type="button" onclick="abrirModal('modal-criar-unidade')">Nova</button>
     </div>
 
     <div class="tabela-wrap">
@@ -81,7 +81,7 @@
             <th>Nome</th>
             <th>Sigla</th>
             <th>Materiais</th>
-            <th style="text-align:right;">Ações</th>
+            <th class="alinha-direita">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -90,19 +90,19 @@
             <td><strong>{{ unid.nome }}</strong></td>
             <td><code>{{ unid.sigla }}</code></td>
             <td>
-              <span class="inspecao-tag" style="background:#eef4f0;">
+              <span class="inspecao-tag">
                 {{ unid.total_produtos }} produto{{ unid.total_produtos|pluralize:"s" }}
               </span>
             </td>
-            <td style="text-align:right;">
-              <div class="acoes" style="justify-content:flex-end;">
+            <td class="alinha-direita">
+              <div class="acoes acoes-direita">
                 <button type="button" class="btn-novo-inline" onclick="abrirEditarUnidade('{{ unid.pk }}', '{{ unid.nome|escapejs }}', '{{ unid.sigla|escapejs }}')">Editar</button>
                 {% if unid.total_produtos > 0 %}
-                  <span class="status" style="background:#f4f6f5; color:var(--muted); cursor:not-allowed;" title="Bloqueado (RN01): Esta unidade está em uso por materiais e não pode ser excluída.">Em uso</span>
+                  <span class="status status-em-uso" title="Bloqueado (RN01): Esta unidade está em uso por materiais e não pode ser excluída.">Em uso</span>
                 {% else %}
-                  <form method="post" action="{% url 'estoque:excluir_unidade' unid.pk %}" style="display:inline;" onsubmit="return confirm('Deseja excluir a unidade “{{ unid.nome }}”?');">
+                  <form method="post" action="{% url 'estoque:excluir_unidade' unid.pk %}" class="form-inline" onsubmit="return confirm('Deseja excluir a unidade “{{ unid.nome }}”?');">
                     {% csrf_token %}
-                    <button type="submit" class="btn-novo-inline" style="background:#fff0ed; color:var(--vermelho); border-color:#f8d7da;">Excluir</button>
+                    <button type="submit" class="btn-novo-inline botao-remover-inline">Excluir</button>
                   </form>
                 {% endif %}
               </div>
@@ -124,7 +124,7 @@
 <div id="modal-criar-categoria" class="modal-backdrop" style="display:none;">
   <div class="modal-caixa">
     <div class="modal-cabecalho">
-      <h3>📁 Nova Categoria</h3>
+      <h3>Nova Categoria</h3>
       <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-criar-categoria')">&times;</button>
     </div>
     <form method="post" action="{% url 'estoque:criar_categoria' %}">
@@ -147,7 +147,7 @@
 <div id="modal-editar-categoria" class="modal-backdrop" style="display:none;">
   <div class="modal-caixa">
     <div class="modal-cabecalho">
-      <h3>✏️ Editar Categoria</h3>
+      <h3>Editar Categoria</h3>
       <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-editar-categoria')">&times;</button>
     </div>
     <form method="post" id="form-editar-cat" action="">
@@ -170,7 +170,7 @@
 <div id="modal-criar-unidade" class="modal-backdrop" style="display:none;">
   <div class="modal-caixa">
     <div class="modal-cabecalho">
-      <h3>📏 Nova Unidade de Medida</h3>
+      <h3>Nova Unidade de Medida</h3>
       <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-criar-unidade')">&times;</button>
     </div>
     <form method="post" action="{% url 'estoque:criar_unidade' %}">
@@ -182,7 +182,7 @@
         </div>
         <div class="campo">
           <label for="input-criar-unid-sigla">Sigla:</label>
-          <input type="text" id="input-criar-unid-sigla" name="sigla" placeholder="Ex.: m²" style="max-width:140px;" required>
+          <input class="campo-sigla" type="text" id="input-criar-unid-sigla" name="sigla" placeholder="Ex.: m²" required>
         </div>
       </div>
       <div class="modal-rodape">
@@ -197,7 +197,7 @@
 <div id="modal-editar-unidade" class="modal-backdrop" style="display:none;">
   <div class="modal-caixa">
     <div class="modal-cabecalho">
-      <h3>✏️ Editar Unidade de Medida</h3>
+      <h3>Editar Unidade de Medida</h3>
       <button type="button" class="btn-fechar-modal" onclick="fecharModal('modal-editar-unidade')">&times;</button>
     </div>
     <form method="post" id="form-editar-unid" action="">
@@ -209,7 +209,7 @@
         </div>
         <div class="campo">
           <label for="input-edit-unid-sigla">Sigla:</label>
-          <input type="text" id="input-edit-unid-sigla" name="sigla" style="max-width:140px;" required>
+          <input class="campo-sigla" type="text" id="input-edit-unid-sigla" name="sigla" required>
         </div>
       </div>
       <div class="modal-rodape">

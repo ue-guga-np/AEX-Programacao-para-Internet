@@ -9,10 +9,10 @@
     <p>Consulte insumos, visualize fotos ao clicar na tabela e realize baixas e entradas rápidas.</p>
   </div>
   <div class="cabecalho-botoes">
-    <a class="botao secundario" href="{% url 'estoque:exportar_excel' %}" title="Exportar dados para Excel">📊 Exportar Excel</a>
+    <a class="botao secundario" href="{% url 'estoque:exportar_excel' %}" title="Exportar dados para Excel">Exportar Excel</a>
     {% if user.is_staff or user.is_superuser %}
-      <a class="botao secundario" href="{% url 'estoque:painel_backups' %}" title="Gerenciar backups do sistema">💾 Backups</a>
-      <a class="botao" href="{% url 'estoque:criar' %}">＋ Novo material</a>
+      <a class="botao secundario" href="{% url 'estoque:painel_backups' %}" title="Gerenciar backups do sistema">Backups</a>
+      <a class="botao" href="{% url 'estoque:criar' %}">Novo material</a>
     {% endif %}
   </div>
 </div>
@@ -105,7 +105,7 @@
                   <a class="perigo-texto" href="{% url 'estoque:excluir' produto.pk %}" title="Excluir produto">Excluir</a>
                 </div>
               {% else %}
-                <span style="color:var(--muted); font-size:11px;">Operação rápida</span>
+                <span class="texto-secundario">Operação rápida</span>
               {% endif %}
             </td>
           </tr>
@@ -126,7 +126,7 @@
   <aside>
     <div class="painel-inspecao" id="painel-inspecao">
       <div class="painel-inspecao-cabecalho">
-        <h3>🔍 Material Selecionado</h3>
+        <h3>Material Selecionado</h3>
         <span id="badge-status-inspecao" class="status {% if produto_selecionado and produto_selecionado.estoque_critico %}critico{% else %}normal{% endif %}">
           {% if produto_selecionado %}
             {% if produto_selecionado.estoque_critico %}Estoque crítico{% else %}Normal{% endif %}
@@ -141,13 +141,11 @@
         {% if produto_selecionado and produto_selecionado.imagem %}
           <img src="{{ produto_selecionado.imagem.url }}" alt="{{ produto_selecionado.nome }}" class="foto-inspecao-img" id="img-inspecao">
           <div class="foto-inspecao-sem-imagem" id="sem-imagem-inspecao" style="display:none;">
-            <span class="icone-camera">📷</span>
             <span class="texto-sem-foto">Sem Imagem</span>
           </div>
         {% else %}
           <img src="" alt="" class="foto-inspecao-img" id="img-inspecao" style="display:none;">
           <div class="foto-inspecao-sem-imagem" id="sem-imagem-inspecao">
-            <span class="icone-camera">📷</span>
             <span class="texto-sem-foto">Sem Imagem</span>
           </div>
         {% endif %}
@@ -160,10 +158,10 @@
         </h4>
         <div class="inspecao-tags">
           <span class="inspecao-tag" id="categoria-inspecao">
-            📁 {% if produto_selecionado %}{{ produto_selecionado.categoria.nome }}{% else %}—{% endif %}
+            {% if produto_selecionado %}{{ produto_selecionado.categoria.nome }}{% else %}—{% endif %}
           </span>
           <span class="inspecao-tag" id="unidade-inspecao">
-            📏 {% if produto_selecionado %}{{ produto_selecionado.unidade.sigla }}{% else %}—{% endif %}
+            {% if produto_selecionado %}{{ produto_selecionado.unidade.sigla }}{% else %}—{% endif %}
           </span>
         </div>
 
@@ -186,13 +184,13 @@
       <!-- Abas de Ação: Baixa Rápida / Adicionar Saldo -->
       {% if produto_selecionado %}
       <div class="abas-acoes">
-        <button type="button" class="aba-btn ativa" id="tab-btn-baixa" onclick="alternarAba('baixa')">⚡ Dar Baixa</button>
-        <button type="button" class="aba-btn" id="tab-btn-entrada" onclick="alternarAba('entrada')">➕ Adicionar Saldo</button>
+        <button type="button" class="aba-btn ativa" id="tab-btn-baixa" onclick="alternarAba('baixa')">Dar Baixa</button>
+        <button type="button" class="aba-btn" id="tab-btn-entrada" onclick="alternarAba('entrada')">Adicionar Saldo</button>
       </div>
 
       <!-- Formulário de Baixa Rápida -->
       <div class="card-operacao-rapida" id="card-baixa-bloco">
-        <h5>⚡ Retirada de Estoque (Baixa)</h5>
+        <h5>Retirada de Estoque (Baixa)</h5>
         <p>Informe a quantidade inteira a retirar para deduzir do saldo.</p>
 
         <form method="post" id="form-baixa-rapida" action="{% url 'estoque:baixa_rapida' produto_selecionado.pk %}" class="baixa-rapida-form">
@@ -216,19 +214,15 @@
             <button type="button" class="chip-btn" onclick="definirQtdBaixa(10)">10</button>
             <button type="button" class="chip-btn" onclick="definirQtdBaixaTotal()">Tudo</button>
           </div>
-          <div style="margin-top: 10px;">
-                <input type="text"
-                      name="observacao"
-                      id="input-obs-baixa"
-                      placeholder="Motivo / O.S. (opcional, ex: Armário cliente Carlos)"
-                      style="width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 12px; border: 1px solid var(--borda, #ccc); border-radius: 6px;">
+          <div class="campo-observacao">
+            <input type="text" name="observacao" id="input-obs-baixa" placeholder="Motivo / O.S. (opcional, ex: Armário cliente Carlos)">
           </div>
         </form>
       </div>
 
       <!-- Formulário de Entrada / Aumentar Saldo -->
       <div class="card-operacao-rapida" id="card-entrada-bloco" style="display:none;">
-        <h5 style="color:var(--verde);">➕ Entrada de Estoque (Adicionar)</h5>
+        <h5>Entrada de Estoque (Adicionar)</h5>
         <p>Informe a quantidade inteira para somar ao saldo do material.</p>
 
         <form method="post" id="form-adicionar-saldo" action="{% url 'estoque:adicionar_saldo' produto_selecionado.pk %}" class="baixa-rapida-form">
@@ -257,22 +251,21 @@
       <!-- Links de Atalho -->
       {% if user.is_staff or user.is_superuser %}
         <div class="inspecao-links">
-          <a id="link-editar-inspecao" href="{% url 'estoque:editar' produto_selecionado.pk %}">✏️ Editar</a>
-          <a id="link-excluir-inspecao" class="link-perigo" href="{% url 'estoque:excluir' produto_selecionado.pk %}">🗑️ Excluir</a>
+          <a id="link-editar-inspecao" href="{% url 'estoque:editar' produto_selecionado.pk %}">Editar</a>
+          <a id="link-excluir-inspecao" class="link-perigo" href="{% url 'estoque:excluir' produto_selecionado.pk %}">Excluir</a>
         </div>
       {% else %}
-        <div style="font-size:11px; color:#0369a1; background:#e0f2fe; padding:8px 10px; border-radius:4px; margin-top:12px; border:1px solid #bae6fd; text-align:center;">
-          🔨 <strong>Perfil de Operador</strong>: você pode dar baixas e adicionar saldo nos botões acima. Alterações estruturais são gerenciadas pelo Administrador.
+        <div class="aviso-operador">
+          <strong>Perfil de Operador</strong>: você pode dar baixas e adicionar saldo nos botões acima. Alterações estruturais são gerenciadas pelo Administrador.
         </div>
       {% endif %}
       {% else %}
       <div class="card-operacao-rapida">
-        <p style="margin: 0; color: var(--muted); text-align: center;">Cadastre um material para habilitar as funções de estoque.</p>
+        <p class="inspecao-vazia">Cadastre um material para habilitar as funções de estoque.</p>
       </div>
       {% endif %}
 
       <div class="instrucao-selecao">
-        <span>💡</span>
         <span>Clique em qualquer linha da tabela para trocar de material.</span>
       </div>
     </div>
@@ -365,8 +358,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Atualiza Textos
     if (nomeElement) nomeElement.textContent = nome;
-    if (categoriaElement) categoriaElement.textContent = '📁 ' + categoria;
-    if (unidadeElement) unidadeElement.textContent = '📏 ' + unidade;
+    if (categoriaElement) categoriaElement.textContent = categoria;
+    if (unidadeElement) unidadeElement.textContent = unidade;
     if (saldoElement) saldoElement.textContent = quantidadeRaw + ' ' + unidade;
     if (minimoElement) minimoElement.textContent = minima + ' ' + unidade;
     if (inputObsBaixa) { inputObsBaixa.value = '';}

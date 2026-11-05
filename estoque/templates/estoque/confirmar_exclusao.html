@@ -15,7 +15,7 @@
   <h2>Deseja remover “{{ produto.nome }}”?</h2>
   
   {% if total_movimentacoes > 0 %}
-    <p style="color:var(--vermelho); font-weight:600; margin-bottom:12px;">
+    <p class="aviso-exclusao">
       Aviso: Este material possui {{ total_movimentacoes }} movimentação(ões) registrada(s) no histórico que também serão removidas.
     </p>
   {% else %}

@@ -1,0 +1,57 @@
+{% extends "estoque/base.html" %}
+{% block title %}Acesso ao Sistema | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-login">
+  <section class="painel login-cartao">
+    <div class="login-marca">
+      <span class="marca-icone">GE</span>
+      <div>
+        <p class="sobretitulo">ACESSO À OFICINA</p>
+        <h1>Controle de Estoque</h1>
+      </div>
+    </div>
+    <p class="login-intro">Entre com seus dados para consultar e administrar os materiais.</p>
+
+    {% if erro %}
+      <div class="mensagem error" role="alert">{{ erro }}</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'estoque:login' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="campo">
+        <label for="id_username">Nome de usuário</label>
+        <input type="text" name="username" id="id_username" placeholder="Digite seu usuário" required autofocus autocomplete="username">
+      </div>
+      <div class="campo">
+        <label for="id_password">Senha</label>
+        <input type="password" name="password" id="id_password" placeholder="Digite sua senha" required autocomplete="current-password">
+      </div>
+        <button class="botao login-submit" type="submit">Entrar no sistema</button>
+    </form>
+
+    <div class="login-acessos">
+      <p>Atalhos rápidos de demonstração</p>
+      <div>
+        <button type="button" class="btn-novo-inline acesso-operador" onclick="preencherLogin('operador', 'operador123')">
+          <strong>Operador (usuário comum)</strong>
+          <small>Pode registrar retiradas e adicionar saldo ao estoque.</small>
+        </button>
+        <button type="button" class="btn-novo-inline acesso-administrador" onclick="preencherLogin('user', '')">
+          <strong>Administrador (gestor)</strong>
+          <small>Acesso a cadastros, edição, relatórios e cópias de segurança.</small>
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+function preencherLogin(usuario, senha) {
+  document.getElementById('id_username').value = usuario;
+  const inputSenha = document.getElementById('id_password');
+  inputSenha.value = senha;
+  inputSenha.focus();
+}
+</script>
+{% endblock %}

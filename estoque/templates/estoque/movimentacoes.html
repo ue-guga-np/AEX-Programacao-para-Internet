@@ -1,0 +1,126 @@
+{% extends "estoque/base.html" %}
+{% load l10n %}
+{% block title %}Movimentações | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-cabecalho">
+  <div>
+    <p class="sobretitulo">AUDITORIA E HISTÓRICO</p>
+    <h1>Movimentações de Estoque</h1>
+    <p>Registro cronológico completo de todas as entradas, retiradas e baixas rápidas.</p>
+  </div>
+  <a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar para o Catálogo</a>
+</div>
+
+<div class="cartoes">
+  <div class="cartao">
+    <p>Total de Registros</p>
+    <strong>{{ registros|length }}</strong>
+  </div>
+  <div class="cartao">
+    <p>Entradas / Adições</p>
+    <strong>{{ total_entradas }}</strong>
+  </div>
+  <div class="cartao alerta-cartao">
+    <p>Saídas / Baixas</p>
+    <strong>{{ total_saidas }}</strong>
+  </div>
+</div>
+
+<div class="filtros-barra">
+  <form class="busca" method="get">
+    <input type="search" name="q" value="{{ termo }}" placeholder="Buscar por material ou categoria...">
+    {% if tipo_filtro %}
+      <input type="hidden" name="tipo" value="{{ tipo_filtro }}">
+    {% endif %}
+    <button class="botao secundario" type="submit">Buscar</button>
+  </form>
+
+  <form method="get" class="filtro-categoria">
+    {% if termo %}
+      <input type="hidden" name="q" value="{{ termo }}">
+    {% endif %}
+    <select name="tipo" onchange="this.form.submit()">
+      <option value="">Todas as operações</option>
+      <option value="S" {% if tipo_filtro == 'S' %}selected{% endif %}>Apenas Saídas / Baixas</option>
+      <option value="E" {% if tipo_filtro == 'E' %}selected{% endif %}>Apenas Entradas / Compras</option>
+    </select>
+  </form>
+
+  {% if termo or tipo_filtro %}
+    <a class="limpar" href="{% url 'estoque:movimentacoes' %}">Limpar filtros</a>
+  {% endif %}
+</div>
+
+<div class="painel tabela-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Data e Hora</th>
+        <th class="col-miniatura">Foto</th>
+        <th>Material</th>
+        <th>Categoria</th>
+        <th>Operador</th>
+        <th>Operação</th>
+        <th>Qtd. movimentada</th>
+        <th>Saldo resultante</th>
+        <th>Motivo / O.S.</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in registros %}
+      <tr>
+        <td class="texto-secundario">
+          {{ item.data|date:"d/m/Y H:i:s" }}
+        </td>
+        <td class="col-miniatura">
+          {% if item.produto.imagem %}
+            <img src="{{ item.produto.imagem.url }}" alt="{{ item.produto.nome }}" class="thumb-mini">
+          {% else %}
+            <span class="thumb-mini-vazio" title="Sem foto">S/F</span>
+          {% endif %}
+        </td>
+        <td><strong>{{ item.produto.nome }}</strong></td>
+        <td>
+          <span class="inspecao-tag">
+            {{ item.produto.categoria.nome }}
+          </span>
+        </td>
+        <td>
+          <span class="movimento-usuario">
+            {% if item.usuario %}{{ item.usuario.first_name|default:item.usuario.username }}{% else %}Sistema{% endif %}
+          </span>
+        </td>
+        <td>
+          {% if item.tipo == "S" %}
+            <span class="status critico">Saída / Baixa</span>
+          {% else %}
+            <span class="status normal">Entrada / Compra</span>
+          {% endif %}
+        </td>
+        <td>
+          <strong class="movimento-quantidade {% if item.tipo == 'S' %}saida{% else %}entrada{% endif %}">
+            {% if item.tipo == "S" %}-{% else %}+{% endif %}{% localize off %}{{ item.quantidade|floatformat:"0" }}{% endlocalize %} {{ item.produto.unidade.sigla }}
+          </strong>
+        </td>
+        <td>
+          <strong>{% localize off %}{{ item.saldo_resultante|floatformat:"0" }}{% endlocalize %} {{ item.produto.unidade.sigla }}</strong>
+        </td>
+        <td class="movimento-observacao">
+       {% if item.observacao %}
+         {{ item.observacao }}
+       {% else %}
+         <span class="texto-secundario">-</span>
+       {% endif %}
+     </td>
+   </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9" class="vazio">
+          Nenhuma movimentação registrada até o momento. Realize uma baixa ou adicione saldo na lista de materiais.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

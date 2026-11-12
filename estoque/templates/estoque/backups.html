@@ -1,0 +1,96 @@
+{% extends "estoque/base.html" %}
+{% block title %}Backups e Planilha Excel | Gerenciador de Estoque{% endblock %}
+{% block content %}
+<div class="pagina-cabecalho">
+  <div>
+    <p class="sobretitulo">SEGURANÇA E RELATÓRIOS</p>
+    <h1>Backups e Planilhas Excel</h1>
+    <p>Proteja as informações da marcenaria com backups locais e gere planilhas para cotação e contabilidade.</p>
+  </div>
+  <a class="botao secundario" href="{% url 'estoque:lista' %}">Voltar para o Catálogo</a>
+</div>
+
+<div class="cartoes">
+  <div class="cartao">
+    <p>Produtos cadastrados</p>
+    <strong>{{ total_produtos }}</strong>
+  </div>
+  <div class="cartao">
+    <p>Movimentações registradas</p>
+    <strong>{{ total_movimentacoes }}</strong>
+  </div>
+  <div class="cartao">
+    <p>Status do banco</p>
+    <strong class="status-banco">SQLite ativo</strong>
+  </div>
+</div>
+
+<div class="grid-colunas">
+  <!-- Seção 1: Planilha Excel -->
+  <div class="painel">
+    <h2>Planilha Eletrônica Excel (.xlsx)</h2>
+    <p class="ferramenta-intro">
+      Gere relatórios padronizados para envio a fornecedores ou contabilidade, ou importe novos insumos em lote.
+    </p>
+
+    <div class="bloco-ferramenta">
+      <h3>Exportar Lista de Estoque</h3>
+      <p>
+        Arquivo .xlsx formatado contendo Produto, Categoria, Unidade, Quantidade Atual e Mínima.
+      </p>
+      <a class="botao" href="{% url 'estoque:exportar_excel' %}">Baixar Excel (.xlsx)</a>
+    </div>
+
+    <div class="bloco-ferramenta">
+      <h3>Importar Produtos via Excel</h3>
+      <p>
+        Envie uma planilha com as colunas Produto, Categoria, Unidade, Qtd Atual e Qtd Mínima.
+      </p>
+      <form method="post" action="{% url 'estoque:importar_excel' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="campo">
+          <input type="file" name="arquivo_excel" accept=".xlsx, .xls" required>
+        </div>
+        <button class="botao secundario" type="submit">Importar Planilha</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Seção 2: Backup Completo (.zip) -->
+  <div class="painel">
+    <h2>Cópia de Segurança Completa (.zip)</h2>
+    <p class="ferramenta-intro">
+      Compacta o banco de dados e todo o diretório de imagens de produtos para proteção e migração entre computadores.
+    </p>
+
+    <div class="bloco-ferramenta">
+      <h3>Exportar Backup Completo</h3>
+      <p>
+        Gera um arquivo .zip contendo todo o banco de dados SQLite e a pasta de fotos de produtos.
+      </p>
+      <a class="botao" href="{% url 'estoque:exportar_backup' %}">Fazer Download do Backup (.zip)</a>
+    </div>
+
+    <div class="bloco-ferramenta bloco-perigo">
+      <h3>Restaurar Cópia de Backup</h3>
+      <p>
+        Substitui o banco de dados e as imagens atuais pelo conteúdo do backup enviado.
+      </p>
+      <form method="post" action="{% url 'estoque:importar_backup' %}" enctype="multipart/form-data" onsubmit="return confirm('ATENÇÃO: A restauração substituirá todos os produtos, categorias e movimentações atuais pelo backup. Deseja continuar?');">
+        {% csrf_token %}
+        <div class="campo">
+          <input type="file" name="arquivo_backup" accept=".zip" required>
+        </div>
+        <div class="campo campo-checkbox">
+          <input type="checkbox" name="confirmar_restauracao" value="sim" id="check-confirmar" required>
+          <label class="rotulo-perigo" for="check-confirmar">
+            Confirmo que desejo substituir os dados atuais por este backup
+          </label>
+        </div>
+        <button class="botao perigo" type="submit">Restaurar Backup</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
